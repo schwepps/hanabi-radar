@@ -1,0 +1,4 @@
+-- Local-only seed data, applied by `supabase db reset` after the migrations.
+-- Intentionally empty for FSC-89 (schema-only ticket). Add dev fixtures (e.g. a
+-- demo sensor and a few items) here when local UI/API work needs them. Never put
+-- production data or secrets in this committed file.

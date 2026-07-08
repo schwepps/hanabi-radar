@@ -17,6 +17,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:diff": "supabase db diff",
+    "db:test": "supabase test db",
+    "db:types": "node scripts/db-types.mjs",
+    "db:migration": "supabase migration new",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -45,6 +53,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
+    "supabase": "2.109.1",
     "typescript": "~5.9.3",
     "vitest": "^4.1.10"
   }

@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     'build/**',
     'coverage/**',
     'next-env.d.ts',
+    'src/types/database.ts',
   ]),
 ]);
 
