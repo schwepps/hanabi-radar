@@ -74,10 +74,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Boots the local stack in Docker and applies every migration from scratch —
-      # a failed migration (or a broken `db reset`) fails the job here.
       - name: Start local Supabase
         run: pnpm supabase start
+
+      # Rebuild the whole schema from migrations + seed on a clean database
+      # (validates the AC that `db reset` rebuilds from scratch); a failed
+      # migration or a broken reset fails the job here.
+      - name: Reset database from migrations
+        run: pnpm db:reset
 
       - name: Run pgTAP schema tests
         run: pnpm db:test
