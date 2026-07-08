@@ -1,6 +1,5 @@
 # CLAUDE.md — Hanabi-app
 
-> Copy to the root of the `Hanabi-app` repo as `CLAUDE.md`.
 > Purpose: give an agent (Claude Code / conductor.build) the minimal, reliable context to work in this repo. Concise by design (~100 lines): the linter owns style, this file owns commands, architecture, and guardrails.
 
 ## Context
@@ -9,7 +8,7 @@ Hanabi Radar captures LinkedIn posts (via a browser extension, separate repo `Ha
 
 This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, ingestion, classification). The extension consumes the ingestion API defined here.
 
-Full spec: see `docs/Hanabi-Radar-Documentation-MVP.md` (copy it into the repo). Tickets: Linear, team FSC Consulting, label `Hanabi-app`.
+Full spec: see `docs/Hanabi-Radar-Documentation-MVP.md`. Tickets: Linear, team FSC Consulting, label `Hanabi-app`.
 
 ## Stack
 
@@ -22,13 +21,16 @@ Full spec: see `docs/Hanabi-Radar-Documentation-MVP.md` (copy it into the repo).
 
 > Use **pnpm**. Check `package.json` if a command differs.
 
-- Dev: `pnpm dev`
+- Local database (Docker): `pnpm supabase start` / `pnpm supabase stop`
+- Dev: `pnpm dev` (points at the local Supabase stack by default)
 - Build: `pnpm build`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
-- Supabase migrations: `pnpm supabase migration new <name>` / `pnpm supabase db push` (Supabase CLI)
+- New migration: `pnpm supabase migration new <name>`
+- Apply migrations locally: `pnpm supabase db reset` — to the hosted instance: `pnpm supabase db push`
 
+Requires Docker running for the local stack. Copy `.env.example` to `.env.local` before first run.
 Before opening a PR: `pnpm lint && pnpm typecheck && pnpm build` must pass.
 
 ## Architecture & conventions
@@ -36,9 +38,10 @@ Before opening a PR: `pnpm lint && pnpm typecheck && pnpm build` must pass.
 - **Server Components by default.** Only add `"use client"` for local state, event handlers, or browser APIs. Keep the client boundary as close to the leaves as possible.
 - **Initial data via Server Components**, not `useEffect`. Use `useEffect`/Realtime only for what changes after mount (new items streaming in live).
 - ⚠️ **Next.js 16: `params` and `searchParams` are `Promise`s** in pages — `await` them.
-- **The data schema is the source of truth**: tables `capteurs`, `items`, `item_sources` (see spec §7). `items.linkedin_post_id` is unique (deduplication key). Any change goes through a **versioned migration**, never a manual edit in the database.
+- **The data schema is the source of truth**: tables `sensors`, `items`, `item_sources` (see spec §7). `items.linkedin_post_id` is unique (deduplication key). Enums: `stream` = signal | opportunity | trend | noise; `heat` = cold | warm | hot; `status` = new | processed | dismissed. Any change goes through a **versioned migration**, never a manual edit in the database.
+- **Local vs hosted**: dev runs the database in Docker via the Supabase CLI (`supabase start`); deployed environments use the hosted EU project. Migrations are single-sourced in `supabase/migrations/` and apply identically to both.
 - **Ingestion payload contract**: defined in this repo (ticket FSC-98) and documented in `docs/`. It is the interface the extension consumes — do not break it without updating both sides.
-- **Classification**: one Claude call per new item, structured output. Pre-filter noise by keywords before the call (cost). Taxonomy = Hanabi expertise domains (pmo, servicenow, power_platform, ia_gen, carve_in_out, architecture_si, digital_workplace, product_management, appel_offres…).
+- **Classification**: one Claude call per new item, structured output. Pre-filter noise by keywords before the call (cost). Taxonomy = Hanabi expertise domains (`pmo`, `servicenow`, `power_platform`, `gen_ai`, `carve_in_out`, `it_architecture`, `digital_workplace`, `product_management`, `rfp`…).
 
 ## Guardrails (important)
 
