@@ -23,12 +23,30 @@ technical foundation — no business features yet (ticket FSC-84).
 
 ## Getting started
 
+The local Supabase stack (Docker) is provisioned in FSC-89. Once it is running:
+
 ```bash
-pnpm install   # also installs the git hooks (husky)
-pnpm dev       # start the dev server
+pnpm install               # also installs the git hooks (husky)
+cp .env.example .env.local # then fill in local keys (see below)
+pnpm dev                   # start the dev server
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — you should see an empty home page.
+
+## Environment configuration
+
+Configuration (Supabase URL/keys, Claude API key) is read from environment
+variables — see [`.env.example`](.env.example) for the full list. `src/env.ts` is
+the single source of truth that reads and validates them.
+
+- **Local dev targets the local stack by default.** `.env.development` (committed,
+  no secrets) sets `NEXT_PUBLIC_SUPABASE_URL` to the local Supabase API URL. Get the
+  local keys with `supabase status` and put them in `.env.local`.
+- **Deployed environments** (Vercel EU) use the hosted config — set the same
+  variables in the Vercel project settings.
+
+Secrets never live in the repo: `.env.local` and any `.env*.local` are gitignored;
+only `.env.example` and `.env.development` are committed.
 
 ## Quality commands
 
