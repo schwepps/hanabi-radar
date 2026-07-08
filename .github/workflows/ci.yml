@@ -52,3 +52,42 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  database:
+    name: Migrations, pgTAP & type sync
+    runs-on: ubuntu-latest # GitHub-hosted runners ship Docker, needed by the Supabase CLI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Boots the local stack in Docker and applies every migration from scratch —
+      # a failed migration (or a broken `db reset`) fails the job here.
+      - name: Start local Supabase
+        run: pnpm supabase start
+
+      - name: Run pgTAP schema tests
+        run: pnpm db:test
+
+      # Regenerate types and fail if they differ from the committed file, so a
+      # schema change that forgot `pnpm db:types` cannot land.
+      - name: Check generated types are in sync with migrations
+        run: |
+          pnpm db:types
+          if ! git diff --exit-code -- src/types/database.ts; then
+            echo "::error::src/types/database.ts is out of sync with the migrations. Run 'pnpm db:types' and commit the result."
+            exit 1
+          fi

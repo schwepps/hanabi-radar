@@ -11,7 +11,7 @@ This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, i
 ## Stack (2026)
 
 - **Next.js 16** — App Router, strict TypeScript, Turbopack, **React 19**. Server Components by default.
-- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Not yet wired into the app (provisioned in FSC-89).
+- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU); the Supabase client is not yet wired into the app.
 - **Claude API (Anthropic)** — item classification via structured output / tool use.
 - **Tooling** — pnpm 10 on Node 22; ESLint 9 (flat config), Prettier, Vitest; husky + commitlint + lint-staged; EditorConfig.
 - **Deploy** — Vercel, EU region.
@@ -26,7 +26,7 @@ This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, i
 - `pnpm format` / `pnpm format:check` — Prettier
 - Pre-PR gate (mirrors CI): `pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm format:check`
 
-Supabase CLI (`pnpm supabase start | db reset | db push`, local Docker stack) arrives with FSC-89.
+Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` scripts (`db:start`, `db:reset`, `db:push`, `db:types`, `db:test`, …). Migrations live in `supabase/migrations/`; local stack runs in Docker. See the **Database** section in `README.md`.
 
 ## Project layout
 
