@@ -1,0 +1,9 @@
+# Prettier honors .gitignore by default (skips .next/, coverage/, next-env.d.ts).
+# Only list committed files that Prettier should not reformat.
+pnpm-lock.yaml
+
+# Local-only workspace dir (gitignored outside the repo .gitignore).
+.context
+
+# Vendored spec/agent doc — kept as authored, not Prettier-owned.
+CLAUDE.md
