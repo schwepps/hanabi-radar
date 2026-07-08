@@ -21,27 +21,30 @@ Full spec: see `docs/Hanabi-Radar-Documentation-MVP.md`. Tickets: Linear, team F
 
 > Use **pnpm**. Check `package.json` if a command differs.
 
-- Local database (Docker): `pnpm supabase start` / `pnpm supabase stop`
-- Dev: `pnpm dev` (points at the local Supabase stack by default)
+- Local database (Docker): `pnpm supabase start` / `pnpm supabase stop` _(FSC-89, to come)_
+- Dev: `pnpm dev` (defaults to the local Supabase stack, available from FSC-89)
 - Build: `pnpm build`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
-- New migration: `pnpm supabase migration new <name>`
-- Apply migrations locally: `pnpm supabase db reset` — to the hosted instance: `pnpm supabase db push`
+- New migration: `pnpm supabase migration new <name>` _(FSC-89, to come)_
+- Apply migrations locally: `pnpm supabase db reset` — hosted: `pnpm supabase db push` _(FSC-89, to come)_
 
-Requires Docker running for the local stack. Copy `.env.example` to `.env.local` before first run.
-Before opening a PR: `pnpm lint && pnpm typecheck && pnpm build` must pass.
+The Supabase CLI (local Docker stack) lands in FSC-89. Copy `.env.example` to `.env.local` before the first run.
+Before opening a PR: `pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm format:check` must pass (mirrors CI).
 
 ## Architecture & conventions
 
 - **Server Components by default.** Only add `"use client"` for local state, event handlers, or browser APIs. Keep the client boundary as close to the leaves as possible.
 - **Initial data via Server Components**, not `useEffect`. Use `useEffect`/Realtime only for what changes after mount (new items streaming in live).
 - ⚠️ **Next.js 16: `params` and `searchParams` are `Promise`s** in pages — `await` them.
-- **The data schema is the source of truth**: tables `sensors`, `items`, `item_sources` (see spec §7). `items.linkedin_post_id` is unique (deduplication key). Enums: `stream` = signal | opportunity | trend | noise; `heat` = cold | warm | hot; `status` = new | processed | dismissed. Any change goes through a **versioned migration**, never a manual edit in the database.
+- **The data schema is the source of truth**: tables `sensors`, `items`, `item_sources` (see spec §7). `items.linkedin_post_id` is unique (deduplication key). Enums: `stream` = signal | opportunity | trend | noise; `heat` = cold | warm | hot; `status` = new | processed | dismissed; `post_type` = text | image | multi_image | video | document | poll | article; `author_type` = person | company; `author_degree` / `best_author_degree` = first | second | third | none. Any change goes through a **versioned migration**, never a manual edit in the database.
+- ⚠️ **Per-sensor data never lands on `items`.** `author_degree` and `social_proof` (the warm-intro signals) belong on `item_sources` only. `items.best_author_degree` is a **derived, non-identifying** aggregate — it says a warm path exists without saying whose.
+- **Reposts**: store against `original_author_*`, never the resharer. Contacting the resharer instead of the decision-maker is the bug this prevents.
+- **`posted_at` is derived server-side** from `posted_at_raw` + `captured_at` — LinkedIn only renders relative timestamps ("2h", "1d").
 - **Local vs hosted**: dev runs the database in Docker via the Supabase CLI (`supabase start`); deployed environments use the hosted EU project. Migrations are single-sourced in `supabase/migrations/` and apply identically to both.
 - **Ingestion payload contract**: defined in this repo (ticket FSC-98) and documented in `docs/`. It is the interface the extension consumes — do not break it without updating both sides.
-- **Classification**: one Claude call per new item, structured output. Pre-filter noise by keywords before the call (cost). Taxonomy = Hanabi expertise domains (`pmo`, `servicenow`, `power_platform`, `gen_ai`, `carve_in_out`, `it_architecture`, `digital_workplace`, `product_management`, `rfp`…).
+- **Classification**: one Claude call per new item, structured output. Pass `post_type`, `media_title` and `hashtags` alongside `text` — document/carousel and video posts carry their substance outside the text, so a short text there is a teaser, not noise. Pre-filter noise by keywords before the call (cost). Taxonomy = Hanabi expertise domains (`pmo`, `servicenow`, `power_platform`, `gen_ai`, `carve_in_out`, `it_architecture`, `digital_workplace`, `product_management`, `rfp`…).
 
 ## Guardrails (important)
 
@@ -53,7 +56,7 @@ Before opening a PR: `pnpm lint && pnpm typecheck && pnpm build` must pass.
 ## Code quality
 
 - **Strict TypeScript**, no unjustified `any`.
-- **ESLint 10 flat config** (`eslint.config.js`). Note: `eslint-config-next` may require `--legacy-peer-deps` at install with ESLint 10.
+- **ESLint 9 flat config** (`eslint.config.js`) — pinned to 9, not 10: `eslint-config-next@16` bundles `eslint-plugin-react`, incompatible with ESLint 10 (it calls the removed `context.getFilename`).
 - **Prettier** owns formatting — don't debate style in reviews, leave it to tooling.
 - **Conventional commits** (commitlint + husky). One PR = one Linear ticket, green CI required before merge.
 - Write tests for critical logic: deduplication, RLS, ingestion contract, classification.

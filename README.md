@@ -62,7 +62,7 @@ only `.env.example` and `.env.development` are committed.
 | `pnpm typecheck`    | TypeScript type checking (`next typegen` + `tsc --noEmit`) |
 | `pnpm test`         | Run the test suite (Vitest)                                |
 
-**Before opening a PR:** `pnpm lint && pnpm typecheck && pnpm build` must pass.
+**Before opening a PR:** `pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm format:check` must pass (mirrors CI).
 
 ## Commit conventions
 
