@@ -1,5 +1,6 @@
 import 'server-only';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import { deriveListItem } from './lib/derive';
 import type { ListItem } from './types';
 
@@ -9,9 +10,14 @@ import type { ListItem } from './types';
  * data); never touches `item_sources`, so the holder identity cannot leak into
  * the list payload. Filtering/sorting run client-side over this set for the
  * reference screen; production would push them server-side for scale.
+ *
+ * Takes an injected, RLS-enforced client (the caller's authenticated cookie
+ * client — FSC-93) so the partner `items` policy decides visibility: a partner
+ * gets the feed, a non-partner gets an empty result.
  */
-export async function fetchListItems(): Promise<ListItem[]> {
-  const supabase = createServerSupabaseClient();
+export async function fetchListItems(
+  supabase: SupabaseClient<Database>,
+): Promise<ListItem[]> {
   const { data, error } = await supabase
     .from('items')
     .select('*')
