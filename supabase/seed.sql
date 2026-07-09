@@ -151,3 +151,21 @@ insert into auth.identities (
 -- Promote the demo user to an active partner (idempotent).
 insert into partners (id) values ('d1000000-0000-4000-8000-000000000001')
   on conflict (id) do update set active = true;
+
+-- ============================================================================
+-- FSC-98 — local dev ingestion sensor (LOCAL-ONLY, ingest-ready)
+-- ============================================================================
+-- Lets `pnpm db:reset` + curl exercise POST /api/ingest end to end. The raw token
+-- is a LOCAL DEV value documented in docs/ingestion-api-contract.md; the table
+-- stores only its SHA-256 (digest -> hex, matching hashSensorToken()). This is NOT a
+-- secret — production sensors are provisioned out-of-band. `active` defaults true;
+-- `consented_at` is set so the endpoint's consent gate passes.
+--
+--   Authorization: Bearer hanabi-local-dev-sensor-token
+insert into sensors (id, name, email, token_hash, consented_at) values (
+  'a1000000-0000-4000-8000-000000000003',
+  'Dev Ingestion Sensor',
+  'dev.sensor@hanabi.test',
+  encode(extensions.digest('hanabi-local-dev-sensor-token', 'sha256'), 'hex'),
+  now()
+);

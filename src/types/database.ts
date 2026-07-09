@@ -225,6 +225,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ingest_posts: {
+        Args: { p_posts: Json; p_sensor_id: string }
+        Returns: Json
+      }
       is_partner: { Args: never; Returns: boolean }
       recompute_best_author_degree: {
         Args: { p_item_id: string }

@@ -1,0 +1,165 @@
+# Ingestion API Contract (FSC-98)
+
+> **Single source of truth** for the post-ingestion endpoint, consumed by the
+> `Hanabi-extension` repo (capture: FSC-110; opt-out/purge: FSC-95). Change this and
+> the extension together — never one without the other.
+
+## Endpoint
+
+```
+POST /api/ingest
+Content-Type: application/json
+Authorization: Bearer <sensor-token>
+```
+
+- Runs on the Node.js runtime. HTTPS only in deployed environments.
+- Base URL per environment: local `http://127.0.0.1:3000`, deployed = the Vercel URL.
+- Called from the extension's **background service worker** (host permission), not a
+  content script — so no CORS preflight is involved and no `Access-Control-*` headers
+  are set.
+
+## Authentication
+
+- The sensor presents a **bearer token** — a ≥ 256-bit CSPRNG value provisioned
+  out-of-band. The server stores only its **SHA-256 hex** (`sensors.token_hash`); the
+  raw token is never persisted or logged.
+- A submission is accepted only when the token maps to a sensor that is `active` and
+  has recorded consent (`consented_at`). Consent is enforced at provisioning (a sensor
+  is not made `active` until it has consented); the endpoint also re-checks it.
+- **All** auth failures — missing/malformed header, unknown token, inactive sensor,
+  sensor without consent — return an identical **401** (no enumeration). The server
+  logs the specific reason; the response never discloses it.
+
+To provision a sensor: generate a random token, store `sha256_hex(token)` in
+`sensors.token_hash`, and hand the raw token to the sensor once.
+Local development seeds one ready-to-use sensor (see **Local testing**).
+
+## Request body
+
+An envelope, not a bare array:
+
+```jsonc
+{
+  "version": 1,
+  "posts": [/* 1..50 post objects */],
+}
+```
+
+- `version` **must** be the literal `1`.
+- `posts`: 1 to **50** items (`BATCH_MAX`). Raw body capped at **512 KB**.
+- Unknown keys are rejected (strict) at both the envelope and post level — adding a
+  field is a breaking change that requires a version bump.
+
+### Per-post fields
+
+Routing column: **items** = stored on the shared, partner-visible `items` row;
+**item_sources** = per-sensor, RLS-protected, never exposed by default.
+
+| Field                         | Type                                                                               | Required | Routing          | Notes                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------------- | -------- | ---------------- | ---------------------------------------------------------- |
+| `linkedin_post_id`            | string                                                                             | yes      | items            | Deduplication key (UNIQUE).                                |
+| `url`                         | string (http/https)                                                                | yes      | items            | Permalink. Non-http(s) rejected (XSS guard).               |
+| `author_name`                 | string                                                                             | yes      | items            | The **surfaced** author (the resharer on a repost).        |
+| `captured_at`                 | string (ISO-8601 datetime)                                                         | yes      | items            | When the extension saw the post.                           |
+| `author_company`              | string \| null                                                                     | no       | items            |                                                            |
+| `author_title`                | string \| null                                                                     | no       | items            |                                                            |
+| `author_profile_url`          | string (http/https) \| null                                                        | no       | items            |                                                            |
+| `author_type`                 | `person` \| `company`                                                              | no       | items            | Default `person`.                                          |
+| `text`                        | string \| null                                                                     | no       | items            | Optional (image/doc/video carry substance elsewhere).      |
+| `post_type`                   | `text` \| `image` \| `multi_image` \| `video` \| `document` \| `poll` \| `article` | no       | items            | Default `text`.                                            |
+| `is_repost`                   | boolean                                                                            | no       | items            | Default `false`.                                           |
+| `original_author_name`        | string \| null                                                                     | cond.    | items            | **Required when `is_repost` is true.** The decision-maker. |
+| `original_author_profile_url` | string (http/https) \| null                                                        | no       | items            |                                                            |
+| `media_title`                 | string \| null                                                                     | no       | items            | Carousel/document title.                                   |
+| `hashtags`                    | string[]                                                                           | no       | items            | Default `[]`; blanks dropped; ≤ 64 entries.                |
+| `reaction_count`              | integer ≥ 0                                                                        | no       | items            | Default `0`.                                               |
+| `comment_count`               | integer ≥ 0                                                                        | no       | items            | Default `0`.                                               |
+| `posted_at_raw`               | string \| null                                                                     | no       | items            | LinkedIn's relative string ("2h", "1d", "3 sem").          |
+| `author_degree`               | `first` \| `second` \| `third` \| `none`                                           | no       | **item_sources** | This sensor's connection degree to the author.             |
+| `social_proof`                | string \| null                                                                     | no       | **item_sources** | Warm-intro holder note. Never exposed by default.          |
+
+**Server-derived — do NOT send these** (rejected as unknown keys): `posted_at`
+(derived from `posted_at_raw` + `captured_at`), `best_author_degree`, `seen_count`,
+`stream`/`heat`/`status`/`summary`/`domains` (classification/triage).
+
+Blank strings are treated as absent (stored as null). Optional strings are trimmed.
+
+### Reposts
+
+`author_*` describes the **resharer** (the surfaced author); `original_author_*`
+describes the **original** author. Store both verbatim — the dashboard surfaces the
+original author (the decision-maker), never the resharer. A repost without
+`original_author_name` is rejected (422; a DB CHECK backstops it).
+
+### `posted_at` derivation
+
+LinkedIn renders only relative times, so `posted_at` is reconstructed server-side as
+`captured_at − offset(posted_at_raw)`. Recognised (EN + FR, compact and spelled):
+`now`/`maintenant`, `s`/`min`/`h`/`d`(`j`)/`w`(`sem`)/`mo`(`mois`)/`y`(`an`/`ans`),
+and `il y a …` / `… ago`. Month ≈ 30 days, year ≈ 365 days (approximate; the field
+only feeds ordering + a coarse age label). Unrecognised strings leave `posted_at`
+null and the read layer falls back to `captured_at`.
+
+## Response
+
+**200** — the batch was accepted:
+
+```jsonc
+{ "received": 3, "new_items": 2, "known_items": 1 }
+```
+
+- `new_items`: posts stored for the first time. `known_items`: posts already known
+  (deduplicated). `received` = `new_items` + `known_items` + any failed.
+- `failed` is present only if the DB isolated some posts:
+  `"failed": [{ "linkedin_post_id": "...", "error": "..." }]` — the rest still committed.
+
+### Errors
+
+Uniform shape `{ "error": { "code", "message", "issues"? } }`:
+
+| Status | `code`                   | When                                                                               |
+| ------ | ------------------------ | ---------------------------------------------------------------------------------- |
+| 400    | `invalid_json`           | Body is not valid JSON.                                                            |
+| 401    | `unauthorized`           | Any authentication failure (uniform).                                              |
+| 413    | `payload_too_large`      | Body exceeds 512 KB.                                                               |
+| 415    | `unsupported_media_type` | `Content-Type` is not `application/json`.                                          |
+| 422    | `invalid_payload`        | Schema/enum/refinement/batch-size violation. `issues[]` lists `{ path, message }`. |
+| 500    | `ingest_failed`          | Unexpected persistence failure.                                                    |
+
+`429` is reserved (rate limiting is deferred; batch + body caps are the current
+mitigations).
+
+## Deduplication & idempotency
+
+- Dedup key is `linkedin_post_id` (UNIQUE). Re-sending a known post upserts its
+  `items` row and this sensor's `item_sources` row.
+- **`seen_count`** = the number of **distinct sensors** that reported the post. A
+  same-sensor resend does **not** increment it (idempotent). A new sensor does.
+- Re-capture updates: engagement counts are **greatest-wins** (never regress);
+  `captured_at` and `posted_at` are kept from the **first** capture; classification
+  and triage columns are never touched.
+- `best_author_degree` is a derived, non-identifying aggregate (strongest degree
+  across all sensors) maintained by the database.
+
+## Versioning
+
+The envelope carries `version`. Because the schema is strict (unknown keys rejected),
+**any new field is a breaking change** — bump `version` and update this document and
+the extension together.
+
+## Local testing
+
+`pnpm db:reset` seeds a local dev sensor. Exercise the endpoint (`pnpm dev` running):
+
+```bash
+curl -sS -X POST http://127.0.0.1:3000/api/ingest \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer hanabi-local-dev-sensor-token' \
+  -d '{"version":1,"posts":[{
+        "linkedin_post_id":"urn:li:activity:demo-1",
+        "url":"https://www.linkedin.com/feed/update/urn:li:activity:demo-1",
+        "author_name":"Jean Dupont","captured_at":"2026-07-09T12:00:00.000Z",
+        "posted_at_raw":"2h","reaction_count":12,"author_degree":"second",
+        "social_proof":"Camille connaît Jean"}]}'
+# -> {"received":1,"new_items":1,"known_items":0}
+```
