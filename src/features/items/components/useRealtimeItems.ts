@@ -41,10 +41,13 @@ export function useRealtimeItems(
     // and RLS silently drops every event — a no-op feature with no error. The
     // `cancelled` guard also makes the async path StrictMode/unmount-safe.
     void supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (cancelled) {
+      const token = session?.access_token;
+      // No session (logged out / expired cookies / non-partner): don't open a
+      // socket whose events RLS would only drop — nothing to deliver.
+      if (cancelled || token == null) {
         return;
       }
-      await supabase.realtime.setAuth(session?.access_token ?? null);
+      await supabase.realtime.setAuth(token);
       if (cancelled) {
         return;
       }

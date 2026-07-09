@@ -26,13 +26,20 @@ async function setStatus(
   }
 
   const supabase = await createServerSupabaseAuthClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('items')
     .update({ status })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
 
   if (error != null) {
     console.error('[items] setStatus failed:', error.message);
+    return { error: 'La mise à jour a échoué.' };
+  }
+  // An RLS USING filter (a non-displayed row) or an unknown id updates 0 rows and
+  // still returns no error — surface that as a failure so the optimistic UI rolls
+  // back instead of silently diverging from the persisted status.
+  if (data == null || data.length === 0) {
     return { error: 'La mise à jour a échoué.' };
   }
   return {};
