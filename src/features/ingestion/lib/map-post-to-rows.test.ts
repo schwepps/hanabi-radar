@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { postSchema } from '../schema';
+import { makeRawPost } from './fixtures';
 import { mapPostToRows } from './map-post-to-rows';
+import { postSchema } from './schema';
 
+// makeRawPost() defaults captured_at to this instant, so the posted_at assertions
+// below are pure offsets from it.
 const CAPTURED = '2026-07-09T12:00:00.000Z';
 
 function mapRaw(overrides: Record<string, unknown> = {}) {
-  const post = postSchema.parse({
-    linkedin_post_id: 'urn:li:activity:123',
-    url: 'https://linkedin.com/feed/update/urn:li:activity:123',
-    author_name: 'Jean Dupont',
-    captured_at: CAPTURED,
-    ...overrides,
-  });
-  return mapPostToRows(post);
+  return mapPostToRows(postSchema.parse(makeRawPost(overrides)));
 }
 
 describe('mapPostToRows', () => {

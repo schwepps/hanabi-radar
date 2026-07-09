@@ -53,21 +53,21 @@ select public.ingest_posts(
   )
 ) as j;
 
-select is((select j->>'received'    from res_a), '2', 'A: received 2');          -- 1
-select is((select j->>'new_items'   from res_a), '2', 'A: 2 new items');         -- 2
-select is((select j->>'known_items' from res_a), '0', 'A: 0 known items');       -- 3
+select is((select j->>'received'    from res_a), '2', 'A: received 2');
+select is((select j->>'new_items'   from res_a), '2', 'A: 2 new items');
+select is((select j->>'known_items' from res_a), '0', 'A: 0 known items');
 select is((select seen_count from items where linkedin_post_id = 'ing-1'),
-  1, 'A: ing-1 seen_count = 1');                                                  -- 4
+  1, 'A: ing-1 seen_count = 1');
 select is((select best_author_degree from items where linkedin_post_id = 'ing-1'),
-  'second'::author_degree, 'A: ing-1 best_author_degree = second');              -- 5
+  'second'::author_degree, 'A: ing-1 best_author_degree = second');
 select is((select seen_count from items where linkedin_post_id = 'ing-2'),
-  1, 'A: ing-2 seen_count = 1');                                                  -- 6
+  1, 'A: ing-2 seen_count = 1');
 select is(
   (select author_degree from item_sources s
      join items i on i.id = s.item_id
     where i.linkedin_post_id = 'ing-1'),
   'second'::author_degree,
-  'A: per-sensor author_degree lands on item_sources');                          -- 7
+  'A: per-sensor author_degree lands on item_sources');
 
 -- ===========================================================================
 -- (B) Same-sensor resend is idempotent; greatest-wins counts; classification
@@ -85,18 +85,18 @@ select public.ingest_posts(
   )
 ) as j;
 
-select is((select j->>'new_items'   from res_b), '0', 'B: resend adds 0 new');   -- 8
-select is((select j->>'known_items' from res_b), '2', 'B: resend is 2 known');   -- 9
+select is((select j->>'new_items'   from res_b), '0', 'B: resend adds 0 new');
+select is((select j->>'known_items' from res_b), '2', 'B: resend is 2 known');
 select is((select seen_count from items where linkedin_post_id = 'ing-1'),
-  1, 'B: ing-1 seen_count still 1 (idempotent)');                                -- 10
+  1, 'B: ing-1 seen_count still 1 (idempotent)');
 select is((select reaction_count from items where linkedin_post_id = 'ing-1'),
-  10, 'B: reaction_count not regressed by a lower resend (greatest)');           -- 11
+  10, 'B: reaction_count not regressed by a lower resend (greatest)');
 select is((select stream from items where linkedin_post_id = 'ing-1'),
-  'opportunity'::stream, 'B: classification preserved on re-ingest');            -- 12
+  'opportunity'::stream, 'B: classification preserved on re-ingest');
 select is((select captured_at from items where linkedin_post_id = 'ing-1'),
-  '2026-01-01T00:00:00Z'::timestamptz, 'B: captured_at kept from first capture');-- 13
+  '2026-01-01T00:00:00Z'::timestamptz, 'B: captured_at kept from first capture');
 select is((select posted_at from items where linkedin_post_id = 'ing-1'),
-  '2026-05-01T00:00:00Z'::timestamptz, 'B: null posted_at backfilled');          -- 14
+  '2026-05-01T00:00:00Z'::timestamptz, 'B: null posted_at backfilled');
 
 -- Higher resend raises the count; posted_at stays the first non-null value.
 create temp table res_b2 as
@@ -108,9 +108,9 @@ select public.ingest_posts(
 ) as j;
 
 select is((select reaction_count from items where linkedin_post_id = 'ing-1'),
-  50, 'B: reaction_count raised by a higher resend (greatest)');                 -- 15
+  50, 'B: reaction_count raised by a higher resend (greatest)');
 select is((select posted_at from items where linkedin_post_id = 'ing-1'),
-  '2026-05-01T00:00:00Z'::timestamptz, 'B: posted_at stays first non-null');     -- 16
+  '2026-05-01T00:00:00Z'::timestamptz, 'B: posted_at stays first non-null');
 
 -- ===========================================================================
 -- (C) A second sensor reporting the same posts bumps seen_count and can
@@ -125,20 +125,20 @@ select public.ingest_posts(
   )
 ) as j;
 
-select is((select j->>'known_items' from res_c), '2', 'C: both posts already known');-- 17
+select is((select j->>'known_items' from res_c), '2', 'C: both posts already known');
 select is((select seen_count from items where linkedin_post_id = 'ing-1'),
-  2, 'C: ing-1 seen_count = 2 (two sensors)');                                    -- 18
+  2, 'C: ing-1 seen_count = 2 (two sensors)');
 select is((select best_author_degree from items where linkedin_post_id = 'ing-1'),
-  'first'::author_degree, 'C: ing-1 best_author_degree strengthened to first');   -- 19
+  'first'::author_degree, 'C: ing-1 best_author_degree strengthened to first');
 
 -- ===========================================================================
 -- (D) Same-degree second sensor: seen_count advances even though
 --     best_author_degree is unchanged (widened-guard regression).
 -- ===========================================================================
 select is((select seen_count from items where linkedin_post_id = 'ing-2'),
-  2, 'D: ing-2 seen_count = 2 despite unchanged best degree');                    -- 20
+  2, 'D: ing-2 seen_count = 2 despite unchanged best degree');
 select is((select best_author_degree from items where linkedin_post_id = 'ing-2'),
-  'third'::author_degree, 'D: ing-2 best_author_degree unchanged (third)');       -- 21
+  'third'::author_degree, 'D: ing-2 best_author_degree unchanged (third)');
 
 -- ===========================================================================
 -- (D2) A re-ingest that reports 'none' (this pass didn't observe the degree)
@@ -185,11 +185,11 @@ select public.ingest_posts(
 ) as j;
 -- mk sets author_name = 'Author ing-rep' (the resharer) and original -> Antoine.
 select is((select original_author_name from items where linkedin_post_id = 'ing-rep'),
-  'Antoine Mercier', 'E: original author stored');                               -- 22
+  'Antoine Mercier', 'E: original author stored');
 select is((select author_name from items where linkedin_post_id = 'ing-rep'),
-  'Author ing-rep', 'E: resharer kept as author_name (not swapped)');           -- 23
+  'Author ing-rep', 'E: resharer kept as author_name (not swapped)');
 select is((select is_repost from items where linkedin_post_id = 'ing-rep'),
-  true, 'E: is_repost stored');                                                  -- 24
+  true, 'E: is_repost stored');
 
 -- ===========================================================================
 -- (F) Poison pill: a batch with one bad repost (no original author) isolates
@@ -204,14 +204,14 @@ select public.ingest_posts(
   )
 ) as j;
 
-select is((select j->>'new_items' from res_f), '1', 'F: only the good post is new');-- 25
+select is((select j->>'new_items' from res_f), '1', 'F: only the good post is new');
 select is((select jsonb_array_length(j->'failed') from res_f), 1,
-  'F: exactly one post reported as failed');                                     -- 26
+  'F: exactly one post reported as failed');
 select is((select j->'failed'->0->>'linkedin_post_id' from res_f), 'ing-bad',
-  'F: the failed post is the bad repost');                                       -- 27
+  'F: the failed post is the bad repost');
 select is(
   (select count(*) from items where linkedin_post_id in ('ing-good', 'ing-bad'))::integer,
-  1, 'F: good post committed, bad post rolled back');                            -- 28
+  1, 'F: good post committed, bad post rolled back');
 
 reset role;
 

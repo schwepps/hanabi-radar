@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { ingestBatchSchema, postSchema } from './schema';
+import type { ingestBatchSchema, postSchema } from './lib/schema';
 
 /** A single validated post (schema output, with defaults applied). */
 export type IngestPost = z.infer<typeof postSchema>;

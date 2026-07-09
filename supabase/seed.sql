@@ -160,6 +160,8 @@ insert into partners (id) values ('d1000000-0000-4000-8000-000000000001')
 -- stores only its SHA-256 (digest -> hex, matching hashSensorToken()). This is NOT a
 -- secret — production sensors are provisioned out-of-band. `active` defaults true;
 -- `consented_at` is set so the endpoint's consent gate passes.
+-- NEVER apply this seed to a network-reachable environment: the token is public, so
+-- keep the dev server bound to 127.0.0.1 (the contract's base URL).
 --
 --   Authorization: Bearer hanabi-local-dev-sensor-token
 insert into sensors (id, name, email, token_hash, consented_at) values (

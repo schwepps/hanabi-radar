@@ -14,9 +14,9 @@ export interface SensorIdentity {
  * without recorded consent — so the caller answers with a uniform 401 (no
  * enumeration of which token exists). The distinction is logged server-side only.
  *
- * Runs on the service_role client: `sensors` is service_role-only (RLS-forced
- * elsewhere), and this is a single indexed equality lookup on the unique
- * `token_hash` — never a full-table scan-and-compare (which would be a timing leak).
+ * Runs on the service_role client: `sensors` is service_role-only, and this is a
+ * single indexed equality lookup on the unique `token_hash` — never a full-table
+ * scan-and-compare (which would be a timing leak).
  */
 export async function authenticateSensor(
   supabase: SupabaseClient<Database>,
@@ -29,19 +29,19 @@ export async function authenticateSensor(
     .maybeSingle();
 
   if (error != null) {
-    console.error('[ingest] authenticateSensor failed:', error.message);
+    console.error('[ingestion] authenticateSensor failed:', error.message);
     return null;
   }
   if (data == null) {
     return null; // unknown token
   }
   if (!data.active) {
-    console.error('[ingest] rejected inactive sensor:', data.id);
+    console.error('[ingestion] rejected inactive sensor:', data.id);
     return null;
   }
   if (data.consented_at == null) {
     console.error(
-      '[ingest] rejected sensor without recorded consent:',
+      '[ingestion] rejected sensor without recorded consent:',
       data.id,
     );
     return null;
@@ -49,12 +49,26 @@ export async function authenticateSensor(
   return { id: data.id };
 }
 
+/** Runtime shape check for the RPC result. The DB hands back `Json`, so validate the
+ * fields we depend on rather than trusting a blind cast — a clean 500 beats a
+ * `result.failed.length` throw if the function's return ever drifts. */
+function isIngestResult(value: unknown): value is IngestSuccessBody {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.received === 'number' &&
+    typeof v.new_items === 'number' &&
+    typeof v.known_items === 'number' &&
+    (v.failed == null || Array.isArray(v.failed))
+  );
+}
+
 /**
  * Persist a mapped batch atomically via the `ingest_posts` RPC (one transaction,
  * per-post savepoints, dedup + seen_count handled in the DB). Returns `null` on an
- * unexpected RPC failure so the caller responds 500. Deduplication and aggregate
- * maintenance are the DB's job — this layer only ships the batch and reads back the
- * summary.
+ * unexpected RPC failure or malformed result so the caller responds 500.
  */
 export async function persistBatch(
   supabase: SupabaseClient<Database>,
@@ -63,15 +77,18 @@ export async function persistBatch(
 ): Promise<IngestSuccessBody | null> {
   const { data, error } = await supabase.rpc('ingest_posts', {
     p_sensor_id: sensorId,
+    // MappedPost[] is JSON-serializable, but an interface never structurally
+    // satisfies the recursive `Json` index-signature type — the cast is unavoidable.
     p_posts: posts as unknown as Json,
   });
 
-  if (error != null || data == null) {
-    if (error != null) {
-      console.error('[ingest] persistBatch failed:', error.message);
-    }
+  if (error != null) {
+    console.error('[ingestion] persistBatch failed:', error.message);
     return null;
   }
-
-  return data as unknown as IngestSuccessBody;
+  if (!isIngestResult(data)) {
+    console.error('[ingestion] persistBatch returned an unexpected shape');
+    return null;
+  }
+  return data;
 }
