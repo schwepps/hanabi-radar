@@ -17,6 +17,10 @@ import { isPublicPath } from '@/lib/auth/is-public-path';
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // Anti-cache headers @supabase/ssr passes when it writes session cookies, kept
+  // so they can also be applied to the redirect response below (which may carry
+  // the same Set-Cookie), not just the pass-through `response`.
+  const authHeaders: Record<string, string> = {};
 
   const supabase = createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: {
@@ -33,6 +37,7 @@ export async function proxy(request: NextRequest) {
         }
         // Anti-cache headers so a CDN/proxy can't serve one user's Set-Cookie to
         // another (matters on the hosted Vercel edge; a no-op locally).
+        Object.assign(authHeaders, headers);
         for (const [key, value] of Object.entries(headers)) {
           response.headers.set(key, value);
         }
@@ -53,6 +58,11 @@ export async function proxy(request: NextRequest) {
     // auth cookies) so the browser and server don't desync on the redirect.
     for (const cookie of response.cookies.getAll()) {
       redirectResponse.cookies.set(cookie);
+    }
+    // ...and the anti-cache headers, so this redirect (which may carry that same
+    // Set-Cookie) is never cached by a CDN/reverse proxy either.
+    for (const [key, value] of Object.entries(authHeaders)) {
+      redirectResponse.headers.set(key, value);
     }
     return redirectResponse;
   }
