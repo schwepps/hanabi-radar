@@ -28,6 +28,10 @@ export async function createServerSupabaseAuthClient(): Promise<
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
+        // @supabase/ssr also passes anti-CDN-cache `headers` here, but this path
+        // uses next/headers cookies() with no response object to attach them to.
+        // Session writes land on Server Action POST responses, which are never
+        // cached; the proxy applies the headers where a response IS available.
         try {
           for (const { name, value, options } of cookiesToSet) {
             cookieStore.set(name, value, options);

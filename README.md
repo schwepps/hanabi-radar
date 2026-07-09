@@ -112,8 +112,8 @@ Authentication (applied at deploy time, FSC-107). The values that must match per
 
 | Setting                    | Local (`config.toml`)                | Hosted (Vercel EU)                                   |
 | -------------------------- | ------------------------------------ | ---------------------------------------------------- |
-| `site_url`                 | `http://127.0.0.1:3000`              | `https://<prod-domain>`                              |
-| `additional_redirect_urls` | `http://127.0.0.1:3000`              | prod domain (+ `https://*.vercel.app` previews)      |
+| `site_url`                 | `http://localhost:3000`              | `https://<prod-domain>`                              |
+| `additional_redirect_urls` | `http://localhost:3000`              | prod domain (+ `https://*.vercel.app` previews)      |
 | Providers                  | none (email + password only)         | none (email + password only)                         |
 | `enable_signup`            | `true` (register test users locally) | **`false` — invite-only** (partners provisioned)     |
 | Email confirmations        | `false` (instant local session)      | `true` (real-inbox double-opt-in)                    |
@@ -135,7 +135,7 @@ password: hanabi-demo-partner
 
 ```bash
 pnpm db:reset            # schema + partners table + the demo partner
-pnpm dev                 # http://127.0.0.1:3000
+pnpm dev                 # http://localhost:3000
 # Incognito -> redirected to /login (unauthenticated sees nothing).
 # Sign in as the demo partner -> the seeded feed renders.
 # Sign in as any other user (Studio "Add user", no partners row) -> empty feed.

@@ -1,6 +1,8 @@
 import type { Ref } from 'react';
+import { signOut } from '@/app/login/actions';
 import { Avatar } from '@/components/ui/Avatar';
 import { BrandMark } from '@/components/ui/BrandMark';
+import { Button } from '@/components/ui/Button';
 import { Dot } from '@/components/ui/Dot';
 import { SearchField } from './SearchField';
 
@@ -29,6 +31,12 @@ export function TopBar({ query, onQueryChange, searchRef }: TopBarProps) {
           size={32}
           radiusClassName="rounded-full"
         />
+        {/* signOut is a Server Action; a plain form works from this client tree. */}
+        <form action={signOut}>
+          <Button type="submit" variant="ghost">
+            Déconnexion
+          </Button>
+        </form>
       </div>
     </header>
   );

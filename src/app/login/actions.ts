@@ -15,10 +15,22 @@ export async function login(formData: FormData) {
   const password = String(formData.get('password') ?? '');
 
   const supabase = await createServerSupabaseAuthClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error != null) {
-    // Never surface the raw auth error; a generic flag avoids account enumeration.
+  // Bad credentials come back as { error }; network/unexpected failures throw.
+  // Treat both the same and never surface the raw error (avoids enumeration).
+  // Keep redirect() OUT of the try — it works by throwing NEXT_REDIRECT.
+  let failed: boolean;
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    failed = error != null;
+  } catch {
+    failed = true;
+  }
+
+  if (failed) {
     redirect('/login?error=1');
   }
 
@@ -26,10 +38,14 @@ export async function login(formData: FormData) {
   redirect('/');
 }
 
-/** Sign out and return to the login screen (demo affordance). */
+/** Sign out and return to the login screen. */
 export async function signOut() {
   const supabase = await createServerSupabaseAuthClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error != null) {
+    // Don't swallow silently; the redirect still clears the client-side session.
+    console.error('[auth] signOut failed:', error.message);
+  }
   revalidatePath('/', 'layout');
   redirect('/login');
 }

@@ -37,7 +37,7 @@ export default async function LoginPage({
             name="email"
             required
             autoComplete="email"
-            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-body-sm text-ink"
+            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-body-sm text-ink outline-none focus:border-brand"
           />
         </label>
 
@@ -50,7 +50,7 @@ export default async function LoginPage({
             name="password"
             required
             autoComplete="current-password"
-            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-body-sm text-ink"
+            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-body-sm text-ink outline-none focus:border-brand"
           />
         </label>
 

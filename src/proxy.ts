@@ -48,7 +48,13 @@ export async function proxy(request: NextRequest) {
   if (user == null && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    // Carry over cookies the refresh wrote onto `response` (e.g. cleared stale
+    // auth cookies) so the browser and server don't desync on the redirect.
+    for (const cookie of response.cookies.getAll()) {
+      redirectResponse.cookies.set(cookie);
+    }
+    return redirectResponse;
   }
 
   return response;
