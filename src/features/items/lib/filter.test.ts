@@ -16,7 +16,6 @@ const NO_CRITERIA: FilterCriteria = {
   account: 'all',
   dateRange: 'all',
   query: '',
-  dismissed: [],
 };
 
 describe('matchesSearch', () => {
@@ -117,7 +116,7 @@ describe('filterByTab', () => {
 });
 
 describe('applyFilters', () => {
-  it('excludes dismissed ids and ANDs the predicates', () => {
+  it('ANDs the predicates (account + domain)', () => {
     const items = [
       makeListItem({ id: 'a', account: 'Acme', domains: ['pmo'], ageDays: 2 }),
       makeListItem({
@@ -137,12 +136,8 @@ describe('applyFilters', () => {
       ...NO_CRITERIA,
       account: 'Acme',
       domains: ['pmo'],
-      dismissed: [],
     });
     expect(result.map((i) => i.id)).toEqual(['a']);
-
-    const dismissed = applyFilters(items, { ...NO_CRITERIA, dismissed: ['a'] });
-    expect(dismissed.map((i) => i.id)).toEqual(['b', 'c']);
   });
 });
 

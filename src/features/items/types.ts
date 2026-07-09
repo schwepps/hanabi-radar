@@ -32,6 +32,8 @@ export interface ListItem {
   path: Degree;
   /** `status === 'new'`. */
   isNew: boolean;
+  /** `status === 'processed'` — a partner has actioned it (persisted, shared). */
+  isProcessed: boolean;
   ageDays: number;
   dateLabel: string;
   /** `items.seen_count` — number of feeds the post appeared in. */

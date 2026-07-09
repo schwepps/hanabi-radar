@@ -15,25 +15,24 @@ import { SortControl } from './SortControl';
 import { StreamTabs } from './StreamTabs';
 import { TopBar } from './TopBar';
 import { useListActions } from './useListActions';
+import { useLiveFeed } from './useLiveFeed';
 
 interface ItemListContainerProps {
   initialItems: ListItem[];
-  accounts: string[];
 }
 
 const EDITABLE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
 /**
- * The single client state owner. Holds the interaction state (useReducer) and
- * derives the visible list, per-stream counts and banner from it, then passes
- * value + handler props to presentational leaves.
+ * The single client state owner. Holds the interaction state (useReducer) and the
+ * live item feed (useLiveFeed — server fetch + Supabase Realtime + persisted
+ * status), derives the visible list, per-stream counts, filter accounts and the
+ * arrival banner from them, then passes value + handler props to the leaves.
  */
-export function ItemListContainer({
-  initialItems,
-  accounts,
-}: ItemListContainerProps) {
+export function ItemListContainer({ initialItems }: ItemListContainerProps) {
   const [state, dispatch] = useReducer(listReducer, undefined, initialState);
   const actions = useListActions(dispatch);
+  const feed = useLiveFeed(initialItems);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // "/" focuses the search field (unless typing in a field already).
@@ -62,21 +61,14 @@ export function ItemListContainer({
       account: state.account,
       dateRange: state.dateRange,
       query: state.query,
-      dismissed: state.dismissed,
     }),
-    [
-      state.domains,
-      state.account,
-      state.dateRange,
-      state.query,
-      state.dismissed,
-    ],
+    [state.domains, state.account, state.dateRange, state.query],
   );
 
   // Filter once, then derive both the per-stream counts and the visible list.
   const filtered = useMemo(
-    () => applyFilters(initialItems, criteria),
-    [initialItems, criteria],
+    () => applyFilters(feed.items, criteria),
+    [feed.items, criteria],
   );
   const counts = useMemo(() => tallyByStream(filtered), [filtered]);
   const visibleItems = useMemo(
@@ -84,21 +76,43 @@ export function ItemListContainer({
     [filtered, state.tab, state.sort],
   );
 
-  const newCount = useMemo(
+  // Accounts for the filter rail, derived from the LIVE feed so a realtime arrival
+  // from a not-yet-seen account is filterable.
+  const accounts = useMemo(
     () =>
-      visibleItems.filter(
-        (item) => item.isNew && !state.processed.includes(item.id),
-      ).length,
-    [visibleItems, state.processed],
+      Array.from(
+        new Set(
+          feed.items
+            .map((item) => item.account)
+            .filter((account): account is string => account != null),
+        ),
+      ).sort((a, b) => a.localeCompare(b, 'fr')),
+    [feed.items],
   );
-  const isBannerVisible = state.bannerShown && newCount > 0;
+
+  // Processed ids for the card state — single source of truth is items.status.
+  const processed = useMemo(
+    () => feed.items.filter((item) => item.isProcessed).map((item) => item.id),
+    [feed.items],
+  );
+
+  // Arrival banner: items that arrived live AND are visible under the current
+  // tab/filters (scoped to the current view). Hidden on load — arrivals start empty.
+  // "masquer" clears exactly these ids, so live arrivals on other tabs still surface.
+  const visibleArrivalIds = useMemo(
+    () =>
+      visibleItems
+        .filter((item) => feed.arrivals.includes(item.id))
+        .map((item) => item.id),
+    [visibleItems, feed.arrivals],
+  );
 
   const revealItem = useMemo(
     () =>
       state.revealFor == null
         ? null
-        : (initialItems.find((item) => item.id === state.revealFor) ?? null),
-    [state.revealFor, initialItems],
+        : (feed.items.find((item) => item.id === state.revealFor) ?? null),
+    [state.revealFor, feed.items],
   );
 
   return (
@@ -128,11 +142,11 @@ export function ItemListContainer({
             />
             <SortControl sort={state.sort} onChange={actions.setSort} />
           </div>
-          {isBannerVisible && (
+          {visibleArrivalIds.length > 0 && (
             <div className="mb-4">
               <RealtimeBanner
-                count={newCount}
-                onDismiss={actions.dismissBanner}
+                count={visibleArrivalIds.length}
+                onDismiss={() => feed.clearArrivals(visibleArrivalIds)}
               />
             </div>
           )}
@@ -142,9 +156,9 @@ export function ItemListContainer({
           <ItemList
             items={visibleItems}
             activeTab={state.tab}
-            processed={state.processed}
-            onDismiss={actions.dismissItem}
-            onToggleProcessed={actions.toggleProcessed}
+            processed={processed}
+            onDismiss={feed.dismiss}
+            onToggleProcessed={feed.toggleProcessed}
             onReveal={actions.openReveal}
             onReset={actions.reset}
           />

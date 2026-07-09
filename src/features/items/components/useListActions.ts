@@ -20,10 +20,6 @@ export function useListActions(dispatch: Dispatch<ListAction>) {
         dispatch({ type: 'setAccount', account }),
       setDateRange: (dateRange: DateRange) =>
         dispatch({ type: 'setDateRange', dateRange }),
-      dismissBanner: () => dispatch({ type: 'dismissBanner' }),
-      dismissItem: (id: string) => dispatch({ type: 'dismissItem', id }),
-      toggleProcessed: (id: string) =>
-        dispatch({ type: 'toggleProcessed', id }),
       openReveal: (id: string) => dispatch({ type: 'openReveal', id }),
       closeReveal: () => dispatch({ type: 'closeReveal' }),
       reset: () => dispatch({ type: 'resetFilters' }),

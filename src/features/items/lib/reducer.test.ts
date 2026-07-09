@@ -9,7 +9,7 @@ describe('listReducer', () => {
     expect(state.dateRange).toBe('7d');
     expect(state.account).toBe('all');
     expect(state.domains).toEqual([]);
-    expect(state.bannerShown).toBe(true);
+    expect(state.revealFor).toBeNull();
   });
 
   it('toggles a domain on then off', () => {
@@ -22,33 +22,10 @@ describe('listReducer', () => {
     expect(removed.domains).toEqual([]);
   });
 
-  it('dismisses items and toggles processed', () => {
-    const dismissed = listReducer(initialState(), {
-      type: 'dismissItem',
-      id: 'x',
-    });
-    expect(dismissed.dismissed).toEqual(['x']);
-
-    const processed = listReducer(initialState(), {
-      type: 'toggleProcessed',
-      id: 'x',
-    });
-    expect(processed.processed).toEqual(['x']);
-    expect(
-      listReducer(processed, { type: 'toggleProcessed', id: 'x' }).processed,
-    ).toEqual([]);
-  });
-
   it('opens and closes the reveal', () => {
     const open = listReducer(initialState(), { type: 'openReveal', id: 'x' });
     expect(open.revealFor).toBe('x');
     expect(listReducer(open, { type: 'closeReveal' }).revealFor).toBeNull();
-  });
-
-  it('dismisses the realtime banner', () => {
-    expect(
-      listReducer(initialState(), { type: 'dismissBanner' }).bannerShown,
-    ).toBe(false);
   });
 
   it('resetFilters clears domains/account/dateRange/query but keeps tab and sort', () => {
