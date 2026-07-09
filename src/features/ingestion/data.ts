@@ -37,8 +37,10 @@ export async function resolveSensor(
   }
   const gate = gateSensor(data, options);
   if (!gate.ok) {
+    // `data` is non-null for inactive/no_consent (a real row); log its id to keep the
+    // reject line correlatable. Unknown tokens are not logged (avoid probe noise).
     if (gate.reason !== 'unknown') {
-      console.error(`[ingestion] rejected sensor (${gate.reason})`);
+      console.error(`[ingestion] rejected sensor (${gate.reason}):`, data?.id);
     }
     return null;
   }

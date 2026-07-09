@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildSuccessBody, isJsonContentType, readJsonBody } from './http';
+import {
+  buildSuccessBody,
+  errorResponse,
+  isJsonContentType,
+  readJsonBody,
+} from './http';
 import { MAX_BODY_BYTES } from './schema';
 
 function jsonRequest(
@@ -103,5 +108,31 @@ describe('buildSuccessBody', () => {
     expect(
       buildSuccessBody({ received: 2, new_items: 1, known_items: 0, failed }),
     ).toEqual({ received: 2, new_items: 1, known_items: 0, failed });
+  });
+});
+
+describe('errorResponse', () => {
+  it('builds the uniform envelope with the given status', async () => {
+    const res = errorResponse(401, 'unauthorized', 'nope');
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({
+      error: { code: 'unauthorized', message: 'nope' },
+    });
+  });
+
+  it('includes issues when provided', async () => {
+    const issues = [{ path: 'posts.0.url', message: 'Must be an http(s) URL' }];
+    const res = errorResponse(422, 'invalid_payload', 'bad', issues);
+    expect(res.status).toBe(422);
+    expect(await res.json()).toEqual({
+      error: { code: 'invalid_payload', message: 'bad', issues },
+    });
+  });
+
+  it('omits the issues key when absent', async () => {
+    const body = (await errorResponse(500, 'server_error', 'x').json()) as {
+      error: Record<string, unknown>;
+    };
+    expect('issues' in body.error).toBe(false);
   });
 });

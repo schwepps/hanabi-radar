@@ -53,6 +53,10 @@ recorded consent. **No request body**; response is `application/json`. Error env
 the shared `{ "error": { "code", "message" } }` — `401 unauthorized` or `500
 server_error`.
 
+`consented_at` is an ISO-8601 UTC timestamp in **offset form** (e.g.
+`2026-07-09T15:24:53.789036+00:00`), not the `Z` form — parse with `new Date(...)`, not
+a `Z`-suffix assumption.
+
 ### GET /api/sensor/me
 
 Validate the token and read back the sensor's identity + consent status.
