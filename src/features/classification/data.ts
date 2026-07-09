@@ -83,16 +83,25 @@ export async function recordClassificationFailure(
   itemId: string,
   failure: ClassifyFailure,
 ): Promise<void> {
-  const { error } = await supabase.rpc('record_classification_failure', {
-    p_item_id: itemId,
-    p_error: failure,
-    p_permanent: isPermanentFailure(failure),
-    p_max_attempts: MAX_CLASSIFY_ATTEMPTS,
-  });
-  if (error != null) {
+  // Never throws — safe to call from a catch block that a DB error may have
+  // triggered (a rejecting client would otherwise re-throw out of the RPC await).
+  try {
+    const { error } = await supabase.rpc('record_classification_failure', {
+      p_item_id: itemId,
+      p_error: failure,
+      p_permanent: isPermanentFailure(failure),
+      p_max_attempts: MAX_CLASSIFY_ATTEMPTS,
+    });
+    if (error != null) {
+      console.error(
+        `[classification] recordClassificationFailure failed for ${itemId}:`,
+        error.message,
+      );
+    }
+  } catch (error) {
     console.error(
-      `[classification] recordClassificationFailure failed for ${itemId}:`,
-      error.message,
+      `[classification] recordClassificationFailure threw for ${itemId}:`,
+      error instanceof Error ? error.message : error,
     );
   }
 }

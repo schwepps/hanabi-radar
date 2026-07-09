@@ -14,6 +14,8 @@ interface FakeOpts {
   fetchError?: string;
   /** Return [] to simulate a raced 0-row write (skipped) for a given item id. */
   persist?: (id: string) => { data: { id: string }[]; error: null };
+  /** Throw from the persist chain for this item id (a rejecting Supabase client). */
+  throwOnPersist?: string;
 }
 
 interface RpcCall {
@@ -41,6 +43,9 @@ function makeFakeSupabase(opts: FakeOpts): {
     const chain: Record<string, unknown> = {
       select: () => {
         if (isUpdate) {
+          if (opts.throwOnPersist === id) {
+            throw new Error('supabase client error');
+          }
           updates.push({ id, update });
           return Promise.resolve(
             opts.persist ? opts.persist(id) : { data: [{ id }], error: null },
@@ -180,5 +185,25 @@ describe('runClassificationBatch', () => {
       p_error: 'error',
       p_permanent: false,
     });
+  });
+
+  it('records an error failure when an unexpected exception is thrown (poison guard)', async () => {
+    const pending = [
+      makePendingItem({ id: 'kaboom', text: 'refonte ServiceNow programme' }),
+    ];
+    const { client, rpcCalls } = makeFakeSupabase({
+      pending,
+      throwOnPersist: 'kaboom',
+    });
+
+    const summary = await runClassificationBatch({
+      supabase: client,
+      parser: routingParser,
+    });
+
+    expect(summary).toMatchObject({ picked: 1, failed: 1 });
+    const rec = rpcCalls.find((c) => c.args.p_item_id === 'kaboom');
+    expect(rec?.name).toBe('record_classification_failure');
+    expect(rec?.args).toMatchObject({ p_error: 'error', p_permanent: false });
   });
 });

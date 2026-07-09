@@ -133,6 +133,11 @@ async function classifyOne(
       `[classification] unexpected error for item ${item.id}:`,
       error instanceof Error ? error.message : error,
     );
+    // Count the unexpected failure (transient) so an item that persistently throws
+    // on an unexpected path still parks after the cap, like a Claude failure —
+    // otherwise this branch would retry it forever. recordClassificationFailure is
+    // best-effort and never throws, so it's safe to call from here.
+    await recordClassificationFailure(deps.supabase, item.id, 'error');
     return 'failed';
   }
 }
