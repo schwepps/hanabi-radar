@@ -11,6 +11,7 @@ export function makeListItem(overrides: Partial<ListItem> = {}): ListItem {
     heat: 'warm',
     path: 'none',
     isNew: false,
+    isProcessed: false,
     ageDays: 3,
     dateLabel: '3 j',
     seen: 1,

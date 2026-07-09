@@ -36,16 +36,18 @@ describe('formatDateLabel', () => {
 });
 
 describe('deriveListItem', () => {
-  it('derives isNew from status and keeps heat null', () => {
+  it('derives isNew/isProcessed from status and keeps heat null', () => {
     const item = deriveListItem(
       makeItemRow({ status: 'new', heat: null }),
       NOW,
     );
     expect(item?.isNew).toBe(true);
+    expect(item?.isProcessed).toBe(false);
     expect(item?.heat).toBeNull();
-    expect(
-      deriveListItem(makeItemRow({ status: 'processed' }), NOW)?.isNew,
-    ).toBe(false);
+
+    const processed = deriveListItem(makeItemRow({ status: 'processed' }), NOW);
+    expect(processed?.isNew).toBe(false);
+    expect(processed?.isProcessed).toBe(true);
   });
 
   it('surfaces the original author for reposts and drops the resharer’s identity', () => {
@@ -100,9 +102,16 @@ describe('deriveListItem', () => {
     expect(item?.authorMeta).toBe('14 publications');
   });
 
-  it('returns null for unclassified and noise rows', () => {
+  it('returns null for unclassified, noise, and dismissed rows', () => {
     expect(deriveListItem(makeItemRow({ stream: null }), NOW)).toBeNull();
     expect(deriveListItem(makeItemRow({ stream: 'noise' }), NOW)).toBeNull();
+    // Dismissed rows drop out of the live feed too (mirrors data.ts .neq).
+    expect(
+      deriveListItem(
+        makeItemRow({ stream: 'signal', status: 'dismissed' }),
+        NOW,
+      ),
+    ).toBeNull();
   });
 
   it('never carries any holder-identity field (privacy invariant)', () => {

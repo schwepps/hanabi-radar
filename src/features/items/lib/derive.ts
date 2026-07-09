@@ -66,12 +66,14 @@ function deriveAuthorMeta(row: ItemRow, kind: AuthorKind): string | null {
 
 /**
  * Derive a card payload from a DB row, or `null` when the row is not shown in
- * the list (unclassified or `noise`). Reposts surface the ORIGINAL author (the
+ * the list — unclassified, `noise`, or `dismissed` (mirrors the fetch's
+ * `.neq('status','dismissed')` in data.ts, so a realtime dismissal drops the row
+ * from the live feed too). Reposts surface the ORIGINAL author (the
  * decision-maker), never the resharer.
  */
 export function deriveListItem(row: ItemRow, now?: Date): ListItem | null {
   const stream = toStream(row.stream);
-  if (stream === null) {
+  if (stream === null || row.status === 'dismissed') {
     return null;
   }
 
@@ -98,6 +100,7 @@ export function deriveListItem(row: ItemRow, now?: Date): ListItem | null {
     heat: row.heat,
     path: row.best_author_degree,
     isNew: row.status === 'new',
+    isProcessed: row.status === 'processed',
     ageDays,
     dateLabel: formatDateLabel(ageDays),
     seen: row.seen_count,

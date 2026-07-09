@@ -20,13 +20,7 @@ export default async function HomePage() {
 
   const items = await fetchListItems(supabase);
 
-  const accounts = Array.from(
-    new Set(
-      items
-        .map((item) => item.account)
-        .filter((account): account is string => account != null),
-    ),
-  ).sort((a, b) => a.localeCompare(b, 'fr'));
-
-  return <ItemListContainer initialItems={items} accounts={accounts} />;
+  // Accounts for the filter rail are derived client-side from the live feed
+  // (ItemListContainer) so realtime arrivals from new accounts stay filterable.
+  return <ItemListContainer initialItems={items} />;
 }

@@ -7,7 +7,6 @@ export interface FilterCriteria {
   account: string;
   dateRange: DateRange;
   query: string;
-  dismissed: string[];
 }
 
 const DATE_RANGE_DAYS: Record<'7d' | '30d', number> = {
@@ -76,14 +75,18 @@ export function filterByTab(items: ListItem[], stream: Stream): ListItem[] {
   return items.filter((item) => item.stream === stream);
 }
 
-/** All non-tab criteria: excludes dismissed ids, then ANDs every predicate. */
+/**
+ * All non-tab criteria ANDed together. Dismissed items are not filtered here:
+ * they never enter the feed (the fetch excludes them, `deriveListItem` returns
+ * null for `status='dismissed'`, and a live dismissal removes the row), so there
+ * is nothing to exclude by id.
+ */
 export function applyFilters(
   items: ListItem[],
   criteria: FilterCriteria,
 ): ListItem[] {
   return items.filter(
     (item) =>
-      !criteria.dismissed.includes(item.id) &&
       matchesSearch(item, criteria.query) &&
       matchesDomains(item, criteria.domains) &&
       matchesAccount(item, criteria.account) &&

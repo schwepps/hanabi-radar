@@ -1,6 +1,13 @@
 import type { DateRange, SortKey, Stream } from '../types';
 
-/** Full interaction state for the Item List (see the handoff's State section). */
+/**
+ * Interaction state for the Item List — how the partner is VIEWING the feed
+ * (tab / sort / filters / open modal). Deliberately holds no item data and no
+ * processed/dismissed sets: item status is now persisted on the row itself
+ * (`items.status`) and lives on each `ListItem` in the container's live feed, so
+ * the container derives "processed" from there. The realtime "new items arrived"
+ * banner is likewise driven by live arrivals in the container, not a flag here.
+ */
 export interface ListState {
   tab: Stream;
   sort: SortKey;
@@ -8,9 +15,6 @@ export interface ListState {
   account: string;
   dateRange: DateRange;
   query: string;
-  bannerShown: boolean;
-  dismissed: string[];
-  processed: string[];
   revealFor: string | null;
 }
 
@@ -21,9 +25,6 @@ export type ListAction =
   | { type: 'setAccount'; account: string }
   | { type: 'setDateRange'; dateRange: DateRange }
   | { type: 'setQuery'; query: string }
-  | { type: 'dismissBanner' }
-  | { type: 'dismissItem'; id: string }
-  | { type: 'toggleProcessed'; id: string }
   | { type: 'openReveal'; id: string }
   | { type: 'closeReveal' }
   | { type: 'resetFilters' };
@@ -40,9 +41,6 @@ export function initialState(): ListState {
     account: 'all',
     dateRange: DEFAULT_DATE_RANGE,
     query: '',
-    bannerShown: true,
-    dismissed: [],
-    processed: [],
     revealFor: null,
   };
 }
@@ -67,12 +65,6 @@ export function listReducer(state: ListState, action: ListAction): ListState {
       return { ...state, dateRange: action.dateRange };
     case 'setQuery':
       return { ...state, query: action.query };
-    case 'dismissBanner':
-      return { ...state, bannerShown: false };
-    case 'dismissItem':
-      return { ...state, dismissed: [...state.dismissed, action.id] };
-    case 'toggleProcessed':
-      return { ...state, processed: toggle(state.processed, action.id) };
     case 'openReveal':
       return { ...state, revealFor: action.id };
     case 'closeReveal':
