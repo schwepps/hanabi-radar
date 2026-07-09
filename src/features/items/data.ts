@@ -17,7 +17,10 @@ export async function fetchListItems(): Promise<ListItem[]> {
     .select('*')
     .in('stream', ['signal', 'opportunity', 'trend'])
     .neq('status', 'dismissed')
-    .order('posted_at', { ascending: false, nullsFirst: false });
+    .order('posted_at', { ascending: false, nullsFirst: false })
+    // Keep null-posted_at rows ordered by recency (captured_at), matching the
+    // ageDays derivation which falls back to captured_at.
+    .order('captured_at', { ascending: false, nullsFirst: false });
 
   if (error != null || data == null) {
     // Don't swallow silently: log server-side and degrade to an empty list.

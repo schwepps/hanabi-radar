@@ -13,7 +13,7 @@ interface SearchFieldProps {
  */
 export function SearchField({ value, onChange, ref }: SearchFieldProps) {
   return (
-    <div className="flex items-center gap-2 rounded-[9px] border border-border bg-field px-3 py-2">
+    <div className="flex items-center gap-2 rounded-[9px] border border-border bg-field px-3 py-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30">
       <span aria-hidden className="text-[15px] text-text-low">
         ⌕
       </span>

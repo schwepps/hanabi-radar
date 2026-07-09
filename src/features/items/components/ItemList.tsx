@@ -25,12 +25,13 @@ export function ItemList({
   const processedSet = new Set(processed);
 
   return (
+    // No tabIndex: the panel always holds focusable children (card actions or
+    // the empty-state button), so per the ARIA APG it should not be a tab stop.
     <div
       role="tabpanel"
       id={`panel-${activeTab}`}
       aria-labelledby={`tab-${activeTab}`}
-      tabIndex={0}
-      className="flex flex-col gap-3 outline-none"
+      className="flex flex-col gap-3"
     >
       {items.length === 0 ? (
         <EmptyState onReset={onReset} />
