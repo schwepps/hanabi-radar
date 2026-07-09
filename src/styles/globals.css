@@ -1,0 +1,142 @@
+/* App-only Tailwind wiring. Imports the framework, then the framework-neutral
+   token SSOT, then maps every --hb-* value into Tailwind's theme namespace with
+   `@theme inline` — "inline" inlines var(--hb-*) straight into the generated
+   utilities, so tokens.css stays the single source (no duplicated values). */
+
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme inline {
+  /* Colours — foundation */
+  --color-canvas: var(--hb-canvas);
+  --color-surface: var(--hb-surface);
+  --color-surface-sunken: var(--hb-surface-sunken);
+  --color-page: var(--hb-page);
+  --color-ink: var(--hb-ink);
+  --color-text-mid: var(--hb-text-mid);
+  --color-text-low: var(--hb-text-low);
+  --color-border: var(--hb-border);
+  --color-border-strong: var(--hb-border-strong);
+
+  /* Colours — brand */
+  --color-brand: var(--hb-brand);
+  --color-brand-hover: var(--hb-brand-hover);
+  --color-brand-tint: var(--hb-brand-tint);
+
+  /* Colours — streams (equal peers) */
+  --color-stream-signal: var(--hb-stream-signal);
+  --color-stream-signal-tint: var(--hb-stream-signal-tint);
+  --color-stream-opportunity: var(--hb-stream-opportunity);
+  --color-stream-opportunity-tint: var(--hb-stream-opportunity-tint);
+  --color-stream-trend: var(--hb-stream-trend);
+  --color-stream-trend-tint: var(--hb-stream-trend-tint);
+
+  /* Colours — heat (one scale) */
+  --color-heat-cold-text: var(--hb-heat-cold-text);
+  --color-heat-cold-bg: var(--hb-heat-cold-bg);
+  --color-heat-cold: var(--hb-heat-cold);
+  --color-heat-warm-text: var(--hb-heat-warm-text);
+  --color-heat-warm-bg: var(--hb-heat-warm-bg);
+  --color-heat-warm: var(--hb-heat-warm);
+  --color-heat-hot-text: var(--hb-heat-hot-text);
+  --color-heat-hot-bg: var(--hb-heat-hot-bg);
+  --color-heat-hot: var(--hb-heat-hot);
+
+  /* Colours — spark (reserved gold) */
+  --color-spark: var(--hb-spark);
+  --color-spark-text: var(--hb-spark-text);
+  --color-spark-glyph: var(--hb-spark-glyph);
+  --color-spark-bg: var(--hb-spark-bg);
+  --color-spark-border: var(--hb-spark-border);
+
+  /* Colours — status */
+  --color-success: var(--hb-success);
+  --color-warning: var(--hb-warning);
+  --color-danger: var(--hb-danger);
+  --color-info: var(--hb-info);
+
+  /* Colours — extended UI shades */
+  --color-border-faint: var(--hb-border-faint);
+  --color-border-soft: var(--hb-border-soft);
+  --color-border-tab: var(--hb-border-tab);
+  --color-surface-muted: var(--hb-surface-muted);
+  --color-field: var(--hb-field);
+  --color-track: var(--hb-track);
+  --color-brand-border: var(--hb-brand-border);
+  --color-success-border: var(--hb-success-border);
+  --color-text-faint: var(--hb-text-faint);
+  --color-text-disabled: var(--hb-text-disabled);
+  --color-chip-text: var(--hb-chip-text);
+  --color-overlay-scrim: var(--hb-overlay-scrim);
+  --color-seen-1: var(--hb-seen-1);
+  --color-seen-2: var(--hb-seen-2);
+  --color-seen-3: var(--hb-seen-3);
+
+  /* Fonts — next/font resolves first (app), plain stack as fallback (extension) */
+  --font-sans: var(--font-figtree), var(--hb-font-sans);
+  --font-mono: var(--font-jetbrains-mono), var(--hb-font-mono);
+
+  /* Type scale (size + companion line-height/weight/letter-spacing) */
+  --text-display: var(--hb-text-display);
+  --text-display--font-weight: var(--hb-text-display-weight);
+  --text-display--letter-spacing: var(--hb-text-display-tracking);
+  --text-h1: var(--hb-text-h1);
+  --text-h1--font-weight: var(--hb-text-h1-weight);
+  --text-h1--letter-spacing: var(--hb-text-h1-tracking);
+  --text-h2: var(--hb-text-h2);
+  --text-h2--font-weight: var(--hb-text-h2-weight);
+  --text-body: var(--hb-text-body);
+  --text-body--line-height: var(--hb-text-body-leading);
+  --text-body--font-weight: var(--hb-text-body-weight);
+  --text-body-sm: var(--hb-text-body-sm);
+  --text-body-sm--font-weight: var(--hb-text-body-sm-weight);
+  --text-meta: var(--hb-text-meta);
+  --text-meta--font-weight: var(--hb-text-meta-weight);
+  --text-overline: var(--hb-text-overline);
+  --text-overline--font-weight: var(--hb-text-overline-weight);
+  --text-overline--letter-spacing: var(--hb-text-overline-tracking);
+
+  /* Radius (sm/md/lg intentionally remap Tailwind defaults to 4/8/11px) */
+  --radius-sm: var(--hb-radius-sm);
+  --radius-md: var(--hb-radius-md);
+  --radius-lg: var(--hb-radius-lg);
+  --radius-card: var(--hb-radius-card);
+  --radius-modal: var(--hb-radius-modal);
+  --radius-surface: var(--hb-radius-surface);
+  --radius-pill: var(--hb-radius-pill);
+
+  /* Elevation */
+  --shadow-card: var(--hb-shadow-card);
+  --shadow-raised: var(--hb-shadow-raised);
+  --shadow-overlay: var(--hb-shadow-overlay);
+
+  /* Animations (keyframes defined globally in tokens.css; override duration
+     per-use with arbitrary utilities, e.g. animate-[hb-drop_0.2s_ease-out]) */
+  --animate-hb-pulse: hb-pulse 1.8s ease-in-out infinite;
+  --animate-hb-sheen: hb-sheen 2.6s ease-out;
+  --animate-hb-drop: hb-drop 0.35s ease-out;
+}
+
+@layer base {
+  html {
+    background-color: var(--hb-canvas);
+    color: var(--hb-ink);
+    color-scheme: light;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  /* Respect reduced-motion: neutralise the decorative keyframes globally as a
+     defence-in-depth backstop (components also gate them behind motion-safe:). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
