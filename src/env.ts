@@ -54,4 +54,17 @@ export const env = {
     assertServerOnly('ANTHROPIC_API_KEY');
     return requireEnv('ANTHROPIC_API_KEY', process.env.ANTHROPIC_API_KEY);
   },
+  /**
+   * Shared secret authorizing the classification worker (`GET/POST /api/classify`) —
+   * server-only. The cron scheduler sends it as `Authorization: Bearer <secret>`;
+   * on Vercel Cron set this to the same value as `CRON_SECRET`. Use a high-entropy
+   * value (e.g. `openssl rand -hex 32`).
+   */
+  get classifyTriggerSecret(): string {
+    assertServerOnly('CLASSIFY_TRIGGER_SECRET');
+    return requireEnv(
+      'CLASSIFY_TRIGGER_SECRET',
+      process.env.CLASSIFY_TRIGGER_SECRET,
+    );
+  },
 };

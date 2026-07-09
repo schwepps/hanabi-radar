@@ -6,15 +6,16 @@ AI into three streams (market signal / business opportunity / trend), and presen
 them to the Hanabi collective's partners.
 
 This repository is the **app** (dashboard + backend). It ships the technical
-foundation (FSC-84), the Supabase schema (FSC-89), and the **Daybreak** design
-system + Item List reference screen (FSC-90).
+foundation (FSC-84), the Supabase schema (FSC-89), the **Daybreak** design system +
+Item List reference screen (FSC-90), partner auth (FSC-93), the sensor ingestion API
+(FSC-98), and AI classification (FSC-100).
 
 ## Tech stack
 
 - **Next.js 16** (App Router, strict TypeScript) — Server Components by default
 - **React 19**
 - **Supabase** (PostgreSQL, Auth, RLS, Edge Functions) — EU region
-- **Claude API** for classification _(to come)_
+- **Claude API** (`@anthropic-ai/sdk`) — item classification
 - **Deployment**: Vercel, EU region _(to come)_
 
 ## Prerequisites
@@ -160,11 +161,33 @@ on conflict (id) do update set active = true;
   on the next query). **GDPR erasure:** delete the `auth.users` row → `on delete cascade`
   drops the partner grant.
 
+## Classification
+
+New items land unclassified (`stream IS NULL`); a secured, cron-triggered worker
+classifies them with Claude — one call per item — into a `stream` (signal /
+opportunity / trend / noise) with expertise-domain tags, a heat level, and a
+one-sentence French summary (FSC-100). Pure-noise and still-unclassified items stay
+off the dashboard. The expertise-domain taxonomy is single-sourced in
+[`src/lib/taxonomy.ts`](src/lib/taxonomy.ts), shared by the classifier and the
+dashboard filter.
+
+The worker runs on a schedule (`vercel.json` cron → `GET /api/classify`) and is also
+callable directly (`POST /api/classify`), authenticated with the
+`CLASSIFY_TRIGGER_SECRET` bearer token. To run it locally, set `ANTHROPIC_API_KEY` +
+`CLASSIFY_TRIGGER_SECRET` in `.env.local`, ingest or seed some items, then:
+
+```bash
+curl -X POST http://localhost:3000/api/classify \
+  -H "Authorization: Bearer $CLASSIFY_TRIGGER_SECRET"
+# → { "picked": N, "classified": …, "prefiltered_noise": …, "skipped": …, "failed": … }
+```
+
 ## Environment configuration
 
-Configuration (Supabase URL/keys, Claude API key) is read from environment
-variables — see [`.env.example`](.env.example) for the full list. `src/env.ts` is
-the single source of truth that reads and validates them.
+Configuration (Supabase URL/keys, `ANTHROPIC_API_KEY`, the classify-worker
+`CLASSIFY_TRIGGER_SECRET`) is read from environment variables — see
+[`.env.example`](.env.example) for the full list. `src/env.ts` is the single source
+of truth that reads and validates them.
 
 - **Local dev targets the local stack by default.** `.env.development` (committed,
   no secrets) sets `NEXT_PUBLIC_SUPABASE_URL` to the local Supabase API URL. Get the

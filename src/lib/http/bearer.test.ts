@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBearerToken } from './parse-bearer';
+import { parseBearerToken } from './bearer';
 
 describe('parseBearerToken', () => {
   it.each([

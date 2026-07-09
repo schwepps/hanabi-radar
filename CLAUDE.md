@@ -11,8 +11,8 @@ This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, i
 ## Stack (2026)
 
 - **Next.js 16** — App Router, strict TypeScript, Turbopack, **React 19**. Server Components by default.
-- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU). A server-only client (`src/lib/supabase/server.ts`, service_role) reads the shared, non-sensitive `items` feed in Server Components (the schema's intended "server-side reads" accessor); partner auth + partner RLS policies are deferred to the auth ticket, and `item_sources` is never read yet (FSC-106).
-- **Claude API (Anthropic)** — item classification via structured output / tool use.
+- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU). A server-only client (`src/lib/supabase/server.ts`, service_role) reads the shared, non-sensitive `items` feed in Server Components (the schema's intended "server-side reads" accessor) and is the writer for the ingestion + classification jobs; partner auth + partner RLS are shipped (FSC-93), and `item_sources` is never read yet (FSC-106).
+- **Claude API (Anthropic)** (`@anthropic-ai/sdk`) — item classification via structured output; one call per new item in a cron-triggered worker (FSC-100).
 - **Tooling** — pnpm 10 on Node 22; ESLint 9 (flat config), Prettier, Vitest; husky + commitlint + lint-staged; EditorConfig.
 - **Deploy** — Vercel, EU region.
 
@@ -33,7 +33,8 @@ Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` 
 - `src/app/**` — App Router routes; Server Components by default, `"use client"` only at the leaves.
 - `src/env.ts` — **single source of truth for config**. Read env vars here, never `process.env` directly in features. Lazy validation + server-only guard on secret keys.
 - `src/styles/tokens.css` — **canonical Daybreak brand tokens** (plain CSS custom properties, no Tailwind directives). Copied verbatim by `Hanabi-extension` (FSC-111). The Tailwind `@theme inline` mapping lives in `src/styles/globals.css` — never add Tailwind directives to `tokens.css`. `rounded-sm/md/lg` are remapped to 4/8/11px.
-- `src/components/ui/**` — generic, token-driven primitives (Button, Badge, Chip, Avatar, Dot, BrandMark). `src/features/<feature>/**` — feature code (components + pure logic in `lib/` + `types.ts`); the Item List (FSC-90) lives in `src/features/items/`.
+- `src/components/ui/**` — generic, token-driven primitives (Button, Badge, Chip, Avatar, Dot, BrandMark). `src/features/<feature>/**` — feature code (components + pure logic in `lib/` + `types.ts`): Item List (FSC-90) in `src/features/items/`, ingestion (FSC-98) in `src/features/ingestion/`, classification (FSC-100) in `src/features/classification/`.
+- Shared libs in `src/lib/`: `taxonomy.ts` (expertise-domain SSOT), `anthropic/server.ts` (server-only Claude client), `http/bearer.ts` (bearer-token parsing), `supabase/server.ts` (service_role client).
 - Tests colocated as `*.test.ts(x)` next to the code they cover (Vitest — Node env; extract pure logic to `lib/` and test that rather than adding React Testing Library).
 - Root config: `eslint.config.js`, `.prettierrc.json`, `tsconfig.json`, `commitlint.config.js`, `.github/workflows/ci.yml`.
 
@@ -41,7 +42,7 @@ Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` 
 
 - Config via **environment variables only** — documented in `.env.example`.
 - **Local dev targets the local stack by default**: `.env.development` (committed, no secrets) sets the local Supabase URL. Deployed envs use Vercel config. Real secrets live in `.env.local` (gitignored) — never commit secrets.
-- `NEXT_PUBLIC_*` is browser-safe; the Supabase `service_role` and Claude keys are **server-only** and must never reach the client — `src/env.ts` enforces this.
+- `NEXT_PUBLIC_*` is browser-safe; the Supabase `service_role` key, the Claude key (`ANTHROPIC_API_KEY`), and the classify-worker secret (`CLASSIFY_TRIGGER_SECRET`) are **server-only** and must never reach the client — `src/env.ts` enforces this.
 
 ## Architecture & conventions
 
@@ -54,7 +55,7 @@ Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` 
 - **Reposts**: store against `original_author_*`, never the resharer. Contacting the resharer instead of the decision-maker is the bug this prevents.
 - **`posted_at` is derived server-side** from `posted_at_raw` + `captured_at` — LinkedIn only renders relative timestamps ("2h", "1d").
 - **Ingestion payload contract** (FSC-98): single source in `docs/` — do not break it without updating the extension too.
-- **Classification**: one Claude call per new item, structured output. Pass `post_type`, `media_title` and `hashtags` alongside `text` — document/carousel and video posts carry their substance outside the text, so a short text there is a teaser, not noise. Pre-filter noise by keywords before the call (cost). Taxonomy = Hanabi expertise domains (`pmo`, `servicenow`, `power_platform`, `gen_ai`, `carve_in_out`, `it_architecture`, `digital_workplace`, `product_management`, `rfp`…).
+- **Classification (FSC-100)**: a secured, cron-triggered worker (`GET/POST /api/classify`, `src/features/classification/`) makes one Claude call per new item (`stream IS NULL`) and writes `stream`/`domains`/`heat`/`summary` back via `service_role`. A keyword pre-filter skips obvious noise before the call (cost); the teaser rule keeps document/carousel/video/poll posts (substance in `media_title`) out of `noise`; `heat` may be set on any stream where there's a clear opening. Poison items park after an attempt cap (`classification_attempts`) so they can't block the FIFO queue. The expertise-domain taxonomy is single-sourced in `src/lib/taxonomy.ts` (also feeds the dashboard filter) — extend it there, never inline.
 
 ## Guardrails
 

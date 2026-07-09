@@ -58,6 +58,8 @@ export function makeItemRow(
     summary: null,
     status: 'new',
     priority: 0,
+    classification_attempts: 0,
+    classification_error: null,
     created_at: '2026-07-01T00:00:00.000Z',
     updated_at: '2026-07-01T00:00:00.000Z',
     ...overrides,

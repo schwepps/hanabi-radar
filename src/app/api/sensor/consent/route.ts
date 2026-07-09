@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { recordConsent, resolveSensor } from '@/features/ingestion/data';
 import { hashSensorToken } from '@/features/ingestion/lib/hash-token';
 import { errorResponse } from '@/features/ingestion/lib/http';
-import { parseBearerToken } from '@/features/ingestion/lib/parse-bearer';
+import { parseBearerToken } from '@/lib/http/bearer';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // node:crypto (token hashing) + the service_role key — must run on Node, not Edge.
