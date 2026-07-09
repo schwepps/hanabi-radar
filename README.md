@@ -5,8 +5,9 @@ posts (via a separate browser extension), deduplicates them, classifies them wit
 AI into three streams (market signal / business opportunity / trend), and presents
 them to the Hanabi collective's partners.
 
-This repository is the **app** (dashboard + backend). It currently contains only the
-technical foundation — no business features yet (ticket FSC-84).
+This repository is the **app** (dashboard + backend). It ships the technical
+foundation (FSC-84), the Supabase schema (FSC-89), and the **Daybreak** design
+system + Item List reference screen (FSC-90).
 
 ## Tech stack
 
@@ -30,10 +31,12 @@ Get the app running locally:
 pnpm install               # also installs the git hooks (husky) + the Supabase CLI
 pnpm db:start              # start the local Supabase stack (Docker) — see Database below
 cp .env.example .env.local # then fill in local keys from `pnpm supabase status`
+pnpm db:reset              # apply migrations + seed the demo items the dashboard reads
 pnpm dev                   # start the dev server
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you should see an empty home page.
+Open [http://localhost:3000](http://localhost:3000) — the Item List dashboard
+(Daybreak design system, FSC-90) renders the seeded items.
 
 ## Database
 
@@ -104,6 +107,27 @@ the single source of truth that reads and validates them.
 
 Secrets never live in the repo: `.env.local` and any `.env*.local` are gitignored;
 only `.env.example` and `.env.development` are committed.
+
+## Design system
+
+The visual identity is the **Daybreak** theme (light only, no switcher), derived
+from the Hanabi brand. Design tokens — colours, typography, spacing, radii,
+elevation — live as plain CSS custom properties in
+[`src/styles/tokens.css`](src/styles/tokens.css), the **single source of truth**.
+
+- The dashboard consumes them via Tailwind v4: `src/styles/globals.css` imports
+  `tokens.css` and maps every `--hb-*` value into Tailwind's theme namespace with
+  `@theme inline`, so utilities (`bg-surface`, `text-ink`, `bg-stream-signal`, …)
+  resolve to the tokens with no duplicated values.
+- `tokens.css` is framework-neutral (plain CSS, no Tailwind directives) so the
+  separate `Hanabi-extension` repo copies it **verbatim** (FSC-111 consent screen) —
+  there is no shared package. Never add Tailwind directives there.
+- Fonts (Figtree + JetBrains Mono) load via `next/font` in the app; the extension
+  uses the plain font stacks documented in `tokens.css`.
+- Note: `rounded-sm/md/lg` are remapped to 4/8/11px to match the token scale.
+
+The **Item List** (`src/app/page.tsx` → `src/features/items/`) is the reference
+screen demonstrating the system, including the permissioned warm-intro reveal modal.
 
 ## Quality commands
 

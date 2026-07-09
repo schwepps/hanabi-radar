@@ -11,7 +11,7 @@ This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, i
 ## Stack (2026)
 
 - **Next.js 16** — App Router, strict TypeScript, Turbopack, **React 19**. Server Components by default.
-- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU); the Supabase client is not yet wired into the app.
+- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU). A server-only client (`src/lib/supabase/server.ts`, service_role) reads the shared, non-sensitive `items` feed in Server Components (the schema's intended "server-side reads" accessor); partner auth + partner RLS policies are deferred to the auth ticket, and `item_sources` is never read yet (FSC-106).
 - **Claude API (Anthropic)** — item classification via structured output / tool use.
 - **Tooling** — pnpm 10 on Node 22; ESLint 9 (flat config), Prettier, Vitest; husky + commitlint + lint-staged; EditorConfig.
 - **Deploy** — Vercel, EU region.
@@ -32,7 +32,9 @@ Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` 
 
 - `src/app/**` — App Router routes; Server Components by default, `"use client"` only at the leaves.
 - `src/env.ts` — **single source of truth for config**. Read env vars here, never `process.env` directly in features. Lazy validation + server-only guard on secret keys.
-- Tests colocated as `*.test.ts(x)` next to the code they cover (Vitest).
+- `src/styles/tokens.css` — **canonical Daybreak brand tokens** (plain CSS custom properties, no Tailwind directives). Copied verbatim by `Hanabi-extension` (FSC-111). The Tailwind `@theme inline` mapping lives in `src/styles/globals.css` — never add Tailwind directives to `tokens.css`. `rounded-sm/md/lg` are remapped to 4/8/11px.
+- `src/components/ui/**` — generic, token-driven primitives (Button, Badge, Chip, Avatar, Dot, BrandMark). `src/features/<feature>/**` — feature code (components + pure logic in `lib/` + `types.ts`); the Item List (FSC-90) lives in `src/features/items/`.
+- Tests colocated as `*.test.ts(x)` next to the code they cover (Vitest — Node env; extract pure logic to `lib/` and test that rather than adding React Testing Library).
 - Root config: `eslint.config.js`, `.prettierrc.json`, `tsconfig.json`, `commitlint.config.js`, `.github/workflows/ci.yml`.
 
 ## Environment & secrets
