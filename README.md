@@ -93,6 +93,73 @@ Set the hosted keys in the Vercel project settings — never in the repo.
 | `pnpm db:test`             | Run the pgTAP tests (`supabase/tests/`)               |
 | `pnpm db:push`             | Apply migrations to the linked hosted project         |
 
+## Authentication
+
+The dashboard is **partners-only** (FSC-93). Access is enforced by **Row Level
+Security** (shipped as the `..._partner_rls.sql` migration — never set by hand) plus
+an SSR email+password login. An authenticated user is a **partner** iff a row exists
+for them in `partners` (`active = true`); a partner reads the shared `items` feed, a
+non-partner sees nothing, and an unauthenticated visitor is redirected to `/login`.
+`item_sources` (who saw what) stays hidden from everyone but `service_role` — the
+warm-intro reveal is a later ticket (FSC-106). Sensors authenticate ingestion with a
+hashed token (`sensors.token_hash`), not Supabase Auth (FSC-98).
+
+### Auth settings per environment
+
+Auth config lives **outside migrations** (Supabase manages GoTrue, not Postgres DDL).
+Local truth = `supabase/config.toml [auth]`; hosted truth = the Supabase dashboard →
+Authentication (applied at deploy time, FSC-107). The values that must match per env:
+
+| Setting                    | Local (`config.toml`)                | Hosted (Vercel EU)                                   |
+| -------------------------- | ------------------------------------ | ---------------------------------------------------- |
+| `site_url`                 | `http://127.0.0.1:3000`              | `https://<prod-domain>`                              |
+| `additional_redirect_urls` | `http://127.0.0.1:3000`              | prod domain (+ `https://*.vercel.app` previews)      |
+| Providers                  | none (email + password only)         | none (email + password only)                         |
+| `enable_signup`            | `true` (register test users locally) | **`false` — invite-only** (partners provisioned)     |
+| Email confirmations        | `false` (instant local session)      | `true` (real-inbox double-opt-in)                    |
+| SMTP                       | Mailpit (`http://127.0.0.1:54324`)   | **custom SMTP required** (built-in is non-prod)      |
+| `minimum_password_length`  | `6`                                  | `8`+                                                 |
+| JWT signing key / secret   | auto (local)                         | Supabase-managed — rotate in dashboard, never in git |
+
+Secrets (SMTP password, JWT signing key, any OAuth secret) never live in the repo —
+`.env.local` (gitignored) locally, Supabase dashboard / Vercel env when hosted.
+
+### Local end-to-end
+
+`pnpm db:reset` seeds a **login-ready demo partner** (local only):
+
+```
+email:    partner@hanabi.test
+password: hanabi-demo-partner
+```
+
+```bash
+pnpm db:reset            # schema + partners table + the demo partner
+pnpm dev                 # http://127.0.0.1:3000
+# Incognito -> redirected to /login (unauthenticated sees nothing).
+# Sign in as the demo partner -> the seeded feed renders.
+# Sign in as any other user (Studio "Add user", no partners row) -> empty feed.
+```
+
+### Provisioning a partner (no dashboard clicks for authorization)
+
+Authorization is a versioned SQL insert; only the auth _account_ differs per env.
+
+```sql
+-- Promote an existing auth user to an active partner (idempotent).
+insert into partners (id)
+select id from auth.users where email = 'partner@firm.com'
+on conflict (id) do update set active = true;
+```
+
+- **Local:** the seed above creates the account + promotes it. New local accounts:
+  Studio → _Add user_, then run the insert.
+- **Hosted:** dashboard → Authentication → _Invite user_ (or the Admin API) creates
+  the account — **never** direct-insert `auth.users` on hosted — then run the insert.
+- **Off-board:** `update partners set active = false where id = '<uuid>';` (takes effect
+  on the next query). **GDPR erasure:** delete the `auth.users` row → `on delete cascade`
+  drops the partner grant.
+
 ## Environment configuration
 
 Configuration (Supabase URL/keys, Claude API key) is read from environment
