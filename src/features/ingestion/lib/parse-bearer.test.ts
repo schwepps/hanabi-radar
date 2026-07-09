@@ -21,6 +21,7 @@ describe('parseBearerToken', () => {
     ['Bearer    '], // scheme, whitespace only
     ['Basic abc123'], // wrong scheme
     ['Bearerabc123'], // no separator
+    ['Bearer abc def'], // internal whitespace — malformed per RFC 6750
   ])('rejects %j -> null', (header) => {
     expect(parseBearerToken(header)).toBeNull();
   });

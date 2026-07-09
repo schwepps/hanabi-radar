@@ -39,8 +39,11 @@ describe('isJsonContentType', () => {
   it.each([
     ['application/json', true],
     ['application/json; charset=utf-8', true],
+    ['application/json;charset=utf-8', true], // no space before params
     ['APPLICATION/JSON', true],
     ['text/plain', false],
+    ['application/jsonp', false], // substring trap
+    ['text/application/json', false], // substring trap
     ['', false],
   ])('%j -> %s', (header, expected) => {
     expect(isJsonContentType(header)).toBe(expected);

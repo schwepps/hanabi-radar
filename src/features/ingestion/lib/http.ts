@@ -29,9 +29,12 @@ export interface HttpError {
 
 export type BodyResult = { body: unknown } | { error: HttpError };
 
-/** True when the request declares a JSON body. */
+/** True when the request declares a JSON body. The media type (before any
+ * `; charset=…` parameters) must be exactly `application/json` — a substring check
+ * would wrongly accept `application/jsonp` or `text/application/json`. */
 export function isJsonContentType(header: string | null): boolean {
-  return (header ?? '').toLowerCase().includes('application/json');
+  const mediaType = (header ?? '').split(';')[0].trim().toLowerCase();
+  return mediaType === 'application/json';
 }
 
 const tooLarge = (): BodyResult => ({
