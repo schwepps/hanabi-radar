@@ -175,6 +175,24 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       sensors: {
         Row: {
           active: boolean
@@ -207,6 +225,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_partner: { Args: never; Returns: boolean }
       recompute_best_author_degree: {
         Args: { p_item_id: string }
         Returns: undefined

@@ -105,3 +105,49 @@ insert into item_sources (item_id, sensor_id, author_degree, social_proof) value
    'Camille Roy est en relation directe avec Jean Dupont'),
   ('b1000000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000002', 'second',
    'Théo Marchand a 3 relations en commun avec Sophie Bernard');
+
+-- ============================================================================
+-- FSC-93 — local demo partner (LOCAL-ONLY, login-ready)
+-- ============================================================================
+-- Makes `pnpm db:reset` alone yield the full auth loop: sign in at /login with
+-- the credentials below, land on the dashboard, and see the seeded feed (RLS
+-- grants an active partner SELECT on items).
+--
+--   email:    partner@hanabi.test
+--   password: hanabi-demo-partner
+--
+-- This block writes GoTrue-managed tables (auth.users, auth.identities) directly
+-- — a LOCAL-ONLY convenience that couples to GoTrue's internal schema. On hosted,
+-- NEVER direct-insert auth.users: create the user via the dashboard invite / Admin
+-- API, then run ONLY the `insert into partners …` promotion (see README
+-- ### Authentication). Token columns are set to '' (empty string), not NULL —
+-- GoTrue's login handler scans them into Go strings and 500s on NULL.
+insert into auth.users (
+  instance_id, id, aud, role, email,
+  encrypted_password, email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token, email_change,
+  email_change_token_new, email_change_token_current,
+  phone_change, phone_change_token, reauthentication_token
+) values (
+  '00000000-0000-0000-0000-000000000000',
+  'd1000000-0000-4000-8000-000000000001',
+  'authenticated', 'authenticated', 'partner@hanabi.test',
+  extensions.crypt('hanabi-demo-partner', extensions.gen_salt('bf')), now(), now(), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+  '', '', '', '', '', '', '', ''
+);
+
+insert into auth.identities (
+  user_id, provider_id, identity_data, provider,
+  last_sign_in_at, created_at, updated_at
+) values (
+  'd1000000-0000-4000-8000-000000000001',
+  'd1000000-0000-4000-8000-000000000001',
+  jsonb_build_object('sub', 'd1000000-0000-4000-8000-000000000001', 'email', 'partner@hanabi.test'),
+  'email', now(), now(), now()
+);
+
+-- Promote the demo user to an active partner (idempotent).
+insert into partners (id) values ('d1000000-0000-4000-8000-000000000001')
+  on conflict (id) do update set active = true;
