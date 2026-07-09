@@ -71,8 +71,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on every route except Next internals and static asset files.
+  // Run on every route except `/api/*` (route handlers self-authenticate via a
+  // sensor token — FSC-98 — and must answer 401 JSON, not a 307 to /login; skipping
+  // them also avoids a wasted getUser() session-refresh on every ingestion POST),
+  // Next internals, and static asset files.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api(?:/|$)|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
