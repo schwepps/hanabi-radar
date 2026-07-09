@@ -83,6 +83,8 @@ export type Database = {
           author_type: Database["public"]["Enums"]["author_type"]
           best_author_degree: Database["public"]["Enums"]["author_degree"]
           captured_at: string
+          classification_attempts: number
+          classification_error: string | null
           comment_count: number
           created_at: string
           domains: string[]
@@ -116,6 +118,8 @@ export type Database = {
           author_type?: Database["public"]["Enums"]["author_type"]
           best_author_degree?: Database["public"]["Enums"]["author_degree"]
           captured_at: string
+          classification_attempts?: number
+          classification_error?: string | null
           comment_count?: number
           created_at?: string
           domains?: string[]
@@ -149,6 +153,8 @@ export type Database = {
           author_type?: Database["public"]["Enums"]["author_type"]
           best_author_degree?: Database["public"]["Enums"]["author_degree"]
           captured_at?: string
+          classification_attempts?: number
+          classification_error?: string | null
           comment_count?: number
           created_at?: string
           domains?: string[]
@@ -232,6 +238,15 @@ export type Database = {
       is_partner: { Args: never; Returns: boolean }
       recompute_best_author_degree: {
         Args: { p_item_id: string }
+        Returns: undefined
+      }
+      record_classification_failure: {
+        Args: {
+          p_error: string
+          p_item_id: string
+          p_max_attempts: number
+          p_permanent: boolean
+        }
         Returns: undefined
       }
       record_sensor_consent: { Args: { p_sensor_id: string }; Returns: string }

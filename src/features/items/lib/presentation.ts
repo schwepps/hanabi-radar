@@ -1,3 +1,4 @@
+import { DOMAINS } from '@/lib/taxonomy';
 import type {
   AuthorKind,
   DateRange,
@@ -151,18 +152,14 @@ export function initials(name: string): string {
     .join('');
 }
 
-/** Expertise-domain filter options (Hanabi taxonomy → French label). */
-export const DOMAIN_OPTIONS: { slug: string; label: string }[] = [
-  { slug: 'pmo', label: 'PMO' },
-  { slug: 'servicenow', label: 'ServiceNow' },
-  { slug: 'power_platform', label: 'Power Platform' },
-  { slug: 'gen_ai', label: 'GenAI' },
-  { slug: 'carve_in_out', label: 'Carve-in / out' },
-  { slug: 'it_architecture', label: 'Architecture IT' },
-  { slug: 'digital_workplace', label: 'Digital Workplace' },
-  { slug: 'product_management', label: 'Product Management' },
-  { slug: 'rfp', label: 'Appels d’offres' },
-];
+/**
+ * Expertise-domain filter options (Hanabi taxonomy → French label), derived from
+ * the single source of truth in `@/lib/taxonomy` so the filter, the classifier's
+ * vocabulary, and the DB-allowed values can never drift.
+ */
+export const DOMAIN_OPTIONS: { slug: string; label: string }[] = DOMAINS.map(
+  ({ slug, label }) => ({ slug, label }),
+);
 
 export const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
   { value: '24h', label: 'Dernières 24 heures' },

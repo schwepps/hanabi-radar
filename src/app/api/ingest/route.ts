@@ -8,7 +8,7 @@ import {
   readJsonBody,
 } from '@/features/ingestion/lib/http';
 import { mapPostToRows } from '@/features/ingestion/lib/map-post-to-rows';
-import { parseBearerToken } from '@/features/ingestion/lib/parse-bearer';
+import { parseBearerToken } from '@/lib/http/bearer';
 import { ingestBatchSchema } from '@/features/ingestion/lib/schema';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 

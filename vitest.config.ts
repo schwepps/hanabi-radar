@@ -9,6 +9,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // `server-only` throws when imported outside a React Server Component build,
+      // which would break importing server-only modules (data.ts, worker.ts) under
+      // Vitest. Alias it to its own client-safe empty module; the Next build-time
+      // guard is unaffected.
+      'server-only': fileURLToPath(
+        new URL('./node_modules/server-only/empty.js', import.meta.url),
+      ),
     },
   },
 });
