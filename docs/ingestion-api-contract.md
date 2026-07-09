@@ -1,8 +1,14 @@
-# Ingestion API Contract (FSC-98)
+# Ingestion & Sensor API Contract (FSC-98)
 
-> **Single source of truth** for the post-ingestion endpoint, consumed by the
-> `Hanabi-extension` repo (capture: FSC-110; opt-out/purge: FSC-95). Change this and
-> the extension together — never one without the other.
+> **Single source of truth** for the post-ingestion + sensor onboarding endpoints,
+> consumed by the `Hanabi-extension` repo (onboarding/consent: FSC-111; capture:
+> FSC-110; opt-out/purge: FSC-95). Change this and the extension together — never one
+> without the other.
+
+All endpoints run on the Node.js runtime and are called from the extension's
+**background service worker / extension page** (with `host_permissions` for this
+origin) — a privileged extension context, so **no CORS** headers or preflight are
+involved. Auth is a bearer token; all auth failures return a uniform **401**.
 
 ## Endpoint
 
@@ -23,16 +29,45 @@ Authorization: Bearer <sensor-token>
 - The sensor presents a **bearer token** — a ≥ 256-bit CSPRNG value provisioned
   out-of-band. The server stores only its **SHA-256 hex** (`sensors.token_hash`); the
   raw token is never persisted or logged.
-- A submission is accepted only when the token maps to a sensor that is `active` and
-  has recorded consent (`consented_at`). Consent is enforced at provisioning (a sensor
-  is not made `active` until it has consented); the endpoint also re-checks it.
-- **All** auth failures — missing/malformed header, unknown token, inactive sensor,
-  sensor without consent — return an identical **401** (no enumeration). The server
-  logs the specific reason; the response never discloses it.
+- `POST /api/ingest` is accepted only when the token maps to a sensor that is `active`
+  **and** has recorded consent (`consented_at`). Consent is captured **in-product**:
+  sensors are provisioned `active` with `consented_at` null, and the extension records
+  consent once via `POST /api/sensor/consent` during onboarding (see **Sensor identity
+  & consent**). The identity/consent endpoints themselves do **not** require prior
+  consent, so an active-but-not-yet-consented sensor validates on them.
+- **All** auth failures — missing/malformed header, unknown token, inactive sensor
+  (and, on `/api/ingest`, a sensor without consent) — return an identical **401** (no
+  enumeration). The server logs the specific reason; the response never discloses it.
 
 To provision a sensor: generate a random token, store `sha256_hex(token)` in
-`sensors.token_hash`, and hand the raw token to the sensor once.
-Local development seeds one ready-to-use sensor (see **Local testing**).
+`sensors.token_hash` with `active = true` and `consented_at` null, and hand the raw
+token to the sensor once. Local development seeds two ready-to-use sensors (see **Local
+testing**).
+
+## Sensor identity & consent
+
+Two auxiliary endpoints for extension onboarding (FSC-111). Same `Authorization: Bearer
+<token>` scheme and the same uniform **401** on any auth failure (missing/malformed,
+unknown token, or `active = false`). Unlike `/api/ingest`, they do **not** require
+recorded consent. **No request body**; response is `application/json`. Error envelope is
+the shared `{ "error": { "code", "message" } }` — `401 unauthorized` or `500
+server_error`.
+
+### GET /api/sensor/me
+
+Validate the token and read back the sensor's identity + consent status.
+
+- **200**: `{ "id": string, "name": string, "email": string, "consented_at": string | null }`
+  — `consented_at` is `null` until consent is recorded (ISO-8601 otherwise).
+
+### POST /api/sensor/consent
+
+Record the sensor's consent. **Idempotent**: sets `consented_at` to the server time on
+the first call and never overwrites it; after this call, `/api/ingest`'s consent gate
+passes.
+
+- **200**: `{ "consented_at": string }` — always a non-null ISO-8601 timestamp (the
+  just-recorded or previously-recorded value).
 
 ## Request body
 
@@ -149,9 +184,26 @@ the extension together.
 
 ## Local testing
 
-`pnpm db:reset` seeds a local dev sensor. Exercise the endpoint (`pnpm dev` running):
+`pnpm db:reset` seeds two local dev sensors:
+
+- `hanabi-local-dev-sensor-token` — onboarded (consent already recorded); use for ingest.
+- `hanabi-local-onboarding-token` — active but consent NOT yet recorded; use for the
+  identity/consent flow.
+
+Exercise the endpoints with `pnpm dev` running:
 
 ```bash
+# Onboarding: validate + read identity (consent still null)
+curl -sS http://127.0.0.1:3000/api/sensor/me \
+  -H 'Authorization: Bearer hanabi-local-onboarding-token'
+# -> {"id":"…","name":"Dev Onboarding Sensor","email":"…","consented_at":null}
+
+# Record consent (idempotent)
+curl -sS -X POST http://127.0.0.1:3000/api/sensor/consent \
+  -H 'Authorization: Bearer hanabi-local-onboarding-token'
+# -> {"consented_at":"2026-…Z"}
+
+# Ingest a post (onboarded sensor)
 curl -sS -X POST http://127.0.0.1:3000/api/ingest \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer hanabi-local-dev-sensor-token' \

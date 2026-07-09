@@ -171,3 +171,13 @@ insert into sensors (id, name, email, token_hash, consented_at) values (
   encode(extensions.digest('hanabi-local-dev-sensor-token', 'sha256'), 'hex'),
   now()
 );
+
+-- A second dev sensor still in ONBOARDING: active, consent NOT yet recorded (default
+-- null), for exercising GET /api/sensor/me (consented_at: null) and the consent flow.
+--   Authorization: Bearer hanabi-local-onboarding-token
+insert into sensors (id, name, email, token_hash) values (
+  'a1000000-0000-4000-8000-000000000004',
+  'Dev Onboarding Sensor',
+  'dev.onboarding@hanabi.test',
+  encode(extensions.digest('hanabi-local-onboarding-token', 'sha256'), 'hex')
+);

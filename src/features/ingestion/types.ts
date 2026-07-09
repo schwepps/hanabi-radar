@@ -6,14 +6,16 @@ export type IngestPost = z.infer<typeof postSchema>;
 /** The full validated ingestion batch. */
 export type IngestBatch = z.infer<typeof ingestBatchSchema>;
 
-/** Machine-readable error codes returned in `{ error: { code } }`. */
+/** Machine-readable error codes returned in `{ error: { code } }` across the sensor
+ * API (ingest + sensor identity/consent). */
 export type IngestErrorCode =
   | 'unsupported_media_type'
   | 'payload_too_large'
   | 'invalid_json'
   | 'unauthorized'
   | 'invalid_payload'
-  | 'ingest_failed';
+  | 'ingest_failed'
+  | 'server_error';
 
 /** One post the DB isolated (per-post savepoint) instead of failing the batch. */
 export interface IngestFailure {

@@ -1,6 +1,7 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/types/database';
+import { gateSensor, type SensorRow } from './lib/gate-sensor';
 import type { MappedPost } from './lib/map-post-to-rows';
 import type { IngestSuccessBody } from './types';
 
@@ -9,44 +10,73 @@ export interface SensorIdentity {
 }
 
 /**
- * Resolve a sensor from its token hash and enforce the ingestion gate. Returns
- * `null` for EVERY failure mode — unknown token, deactivated sensor, or a sensor
- * without recorded consent — so the caller answers with a uniform 401 (no
- * enumeration of which token exists). The distinction is logged server-side only.
+ * Resolve a sensor from its token hash and apply the shared gate. `requireConsent`
+ * separates the post-write path (/api/ingest → true) from the onboarding paths
+ * (/api/sensor/* → false, called BEFORE consent is recorded). Returns the sensor row
+ * when allowed, else `null` for EVERY failure (unknown / inactive / — when required —
+ * not consented), so the caller answers with a uniform 401; the reason is logged
+ * server-side only.
  *
- * Runs on the service_role client: `sensors` is service_role-only, and this is a
- * single indexed equality lookup on the unique `token_hash` — never a full-table
- * scan-and-compare (which would be a timing leak).
+ * Runs on the service_role client (`sensors` is service_role-only): a single indexed
+ * equality lookup on the unique `token_hash`, never a full-table scan-and-compare.
  */
-export async function authenticateSensor(
+export async function resolveSensor(
   supabase: SupabaseClient<Database>,
   tokenHash: string,
-): Promise<SensorIdentity | null> {
+  options: { requireConsent: boolean },
+): Promise<SensorRow | null> {
   const { data, error } = await supabase
     .from('sensors')
-    .select('id, active, consented_at')
+    .select('id, name, email, active, consented_at')
     .eq('token_hash', tokenHash)
     .maybeSingle();
 
   if (error != null) {
-    console.error('[ingestion] authenticateSensor failed:', error.message);
+    console.error('[ingestion] resolveSensor failed:', error.message);
     return null;
   }
-  if (data == null) {
-    return null; // unknown token
-  }
-  if (!data.active) {
-    console.error('[ingestion] rejected inactive sensor:', data.id);
+  const gate = gateSensor(data, options);
+  if (!gate.ok) {
+    if (gate.reason !== 'unknown') {
+      console.error(`[ingestion] rejected sensor (${gate.reason})`);
+    }
     return null;
   }
-  if (data.consented_at == null) {
-    console.error(
-      '[ingestion] rejected sensor without recorded consent:',
-      data.id,
-    );
+  return gate.sensor;
+}
+
+/** Ingest-path auth: requires a valid, active, CONSENTED sensor. */
+export async function authenticateSensor(
+  supabase: SupabaseClient<Database>,
+  tokenHash: string,
+): Promise<SensorIdentity | null> {
+  const sensor = await resolveSensor(supabase, tokenHash, {
+    requireConsent: true,
+  });
+  return sensor == null ? null : { id: sensor.id };
+}
+
+/**
+ * Record a sensor's consent, idempotently (DB-authoritative via the RPC: sets
+ * `consented_at` to now() only the first time). Returns the effective consent
+ * timestamp, or `null` on failure.
+ */
+export async function recordConsent(
+  supabase: SupabaseClient<Database>,
+  sensorId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase.rpc('record_sensor_consent', {
+    p_sensor_id: sensorId,
+  });
+  if (error != null) {
+    console.error('[ingestion] recordConsent failed:', error.message);
     return null;
   }
-  return { id: data.id };
+  if (typeof data !== 'string') {
+    console.error('[ingestion] recordConsent returned no timestamp');
+    return null;
+  }
+  return data;
 }
 
 /** Runtime shape check for the RPC result. The DB hands back `Json`, so validate the

@@ -1,5 +1,25 @@
+import { NextResponse } from 'next/server';
 import type { IngestErrorCode, IngestSuccessBody } from '../types';
 import { MAX_BODY_BYTES } from './schema';
+
+export interface ErrorIssue {
+  path: string;
+  message: string;
+}
+
+/** The uniform error envelope shared by every sensor-API route:
+ * `{ error: { code, message, issues? } }`. */
+export function errorResponse(
+  status: number,
+  code: IngestErrorCode,
+  message: string,
+  issues?: ErrorIssue[],
+): NextResponse {
+  return NextResponse.json(
+    { error: { code, message, ...(issues != null ? { issues } : {}) } },
+    { status },
+  );
+}
 
 export interface HttpError {
   status: number;

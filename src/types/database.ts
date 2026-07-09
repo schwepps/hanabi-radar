@@ -234,6 +234,7 @@ export type Database = {
         Args: { p_item_id: string }
         Returns: undefined
       }
+      record_sensor_consent: { Args: { p_sensor_id: string }; Returns: string }
     }
     Enums: {
       author_degree: "first" | "second" | "third" | "none"

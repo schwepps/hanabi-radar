@@ -3,34 +3,17 @@ import { authenticateSensor, persistBatch } from '@/features/ingestion/data';
 import { hashSensorToken } from '@/features/ingestion/lib/hash-token';
 import {
   buildSuccessBody,
+  errorResponse,
   isJsonContentType,
   readJsonBody,
 } from '@/features/ingestion/lib/http';
 import { mapPostToRows } from '@/features/ingestion/lib/map-post-to-rows';
 import { parseBearerToken } from '@/features/ingestion/lib/parse-bearer';
 import { ingestBatchSchema } from '@/features/ingestion/lib/schema';
-import type { IngestErrorCode } from '@/features/ingestion/types';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // node:crypto (token hashing) + the service_role key — must run on Node, not Edge.
 export const runtime = 'nodejs';
-
-interface ErrorIssue {
-  path: string;
-  message: string;
-}
-
-function errorResponse(
-  status: number,
-  code: IngestErrorCode,
-  message: string,
-  issues?: ErrorIssue[],
-): NextResponse {
-  return NextResponse.json(
-    { error: { code, message, ...(issues != null ? { issues } : {}) } },
-    { status },
-  );
-}
 
 /**
  * POST /api/ingest — the extension's batch upload endpoint (see
