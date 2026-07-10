@@ -1,6 +1,6 @@
-# Hanabi Radar — app
+# Hanabi Intelligence — app
 
-Next.js dashboard + Supabase backend for **Hanabi Radar**: it captures LinkedIn
+Next.js dashboard + Supabase backend for **Hanabi Intelligence**: it captures LinkedIn
 posts (via a separate browser extension), deduplicates them, classifies them with
 AI into three streams (market signal / business opportunity / trend), and presents
 them to the Hanabi collective's partners.
@@ -214,7 +214,7 @@ elevation — live as plain CSS custom properties in
   `@theme inline`, so utilities (`bg-surface`, `text-ink`, `bg-stream-signal`, …)
   resolve to the tokens with no duplicated values.
 - `tokens.css` is framework-neutral (plain CSS, no Tailwind directives) so the
-  separate `Hanabi-extension` repo copies it **verbatim** for its consent screen —
+  separate `hanabi-intelligence-extension` repo copies it **verbatim** for its consent screen —
   there is no shared package. Never add Tailwind directives there.
 - Fonts (Figtree + JetBrains Mono) load via `next/font` in the app; the extension
   uses the plain font stacks documented in `tokens.css`.

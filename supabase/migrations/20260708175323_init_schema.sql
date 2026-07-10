@@ -1,4 +1,4 @@
--- Hanabi Radar initial schema.
+-- Hanabi Intelligence initial schema.
 --
 -- One deduplicated LinkedIn post = one `items` row; per-sensor sighting data lives
 -- on `item_sources` (SENSITIVE, RLS-protected). Enums, tables, indexes, RLS, the

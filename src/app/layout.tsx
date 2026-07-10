@@ -19,8 +19,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Hanabi Radar',
-  description: 'Hanabi Radar — dashboard',
+  title: 'Hanabi Intelligence',
+  description: 'Hanabi Intelligence — dashboard',
 };
 
 export default function RootLayout({

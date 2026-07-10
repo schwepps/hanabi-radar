@@ -1,7 +1,7 @@
 # Ingestion & Sensor API Contract
 
 > **Single source of truth** for the post-ingestion + sensor onboarding endpoints,
-> consumed by the `Hanabi-extension` repo (onboarding/consent, capture,
+> consumed by the `hanabi-intelligence-extension` repo (onboarding/consent, capture,
 > opt-out/purge). Change this and the extension together — never one
 > without the other.
 

@@ -1,10 +1,10 @@
-# CLAUDE.md — Hanabi-app
+# CLAUDE.md — Hanabi Intelligence (App)
 
 > Agent context for this repo. Concise by design: the linter owns style; this file owns commands, architecture, and guardrails. Keep it current — delete stale info as the code evolves.
 
 ## Context
 
-Hanabi Radar captures LinkedIn posts (via a browser extension, separate repo `Hanabi-extension`), deduplicates them, classifies them with Claude into three streams (market signal / business opportunity / trend), and surfaces them to the Hanabi collective's partners in a dashboard.
+Hanabi Intelligence captures LinkedIn posts (via a browser extension, separate repo `hanabi-intelligence-extension`), deduplicates them, classifies them with Claude into three streams (market signal / business opportunity / trend), and surfaces them to the Hanabi collective's partners in a dashboard.
 
 This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, ingestion, classification). The extension consumes the ingestion API defined here — its contract is single-sourced in `docs/ingestion-api-contract.md`. Tickets: Linear, team FSC Consulting, label `Hanabi-app` — one PR = one ticket, green CI required before merge.
 
@@ -32,7 +32,7 @@ Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` 
 
 - `src/app/**` — App Router routes; Server Components by default, `"use client"` only at the leaves.
 - `src/env.ts` — **single source of truth for config**. Read env vars here, never `process.env` directly in features. Lazy validation + server-only guard on secret keys.
-- `src/styles/tokens.css` — **canonical Daybreak brand tokens** (plain CSS custom properties, no Tailwind directives). Copied verbatim by `Hanabi-extension`. The Tailwind `@theme inline` mapping lives in `src/styles/globals.css` — never add Tailwind directives to `tokens.css`. `rounded-sm/md/lg` are remapped to 4/8/11px.
+- `src/styles/tokens.css` — **canonical Daybreak brand tokens** (plain CSS custom properties, no Tailwind directives). Copied verbatim by `hanabi-intelligence-extension`. The Tailwind `@theme inline` mapping lives in `src/styles/globals.css` — never add Tailwind directives to `tokens.css`. `rounded-sm/md/lg` are remapped to 4/8/11px.
 - `src/components/ui/**` — generic, token-driven primitives (Button, Badge, Chip, Avatar, Dot, BrandMark). `src/features/<feature>/**` — feature code (components + pure logic in `lib/` + `types.ts`): the Item List — live feed (Realtime) + warm-intro reveal — in `src/features/items/`, ingestion + sensor lifecycle (consent, opt-out, erasure) in `src/features/ingestion/`, classification in `src/features/classification/`.
 - Shared libs in `src/lib/`: `taxonomy.ts` (expertise-domain SSOT), `anthropic/server.ts` (server-only Claude client), `http/bearer.ts` (bearer-token parsing), `supabase/server.ts` (service_role client).
 - Tests colocated as `*.test.ts(x)` next to the code they cover (Vitest — Node env; extract pure logic to `lib/` and test that rather than adding React Testing Library).
