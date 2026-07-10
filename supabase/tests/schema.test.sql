@@ -1,4 +1,4 @@
--- pgTAP tests for the FSC-89 schema. Run with `pnpm db:test` (local stack must be up).
+-- pgTAP tests for the schema. Run with `pnpm db:test` (local stack must be up).
 -- Everything runs inside a rolled-back transaction, so it leaves no residue.
 
 begin;
@@ -44,7 +44,7 @@ select ok(
 -- Fixtures
 -- ---------------------------------------------------------------------------
 -- consented_at set: recompute_best_author_degree counts only active+consented sensors
--- (FSC-95), so the derivation cases below use consented sensors.
+-- (consent-aware aggregate), so the derivation cases below use consented sensors.
 insert into sensors (id, name, email, token_hash, consented_at) values
   ('00000000-0000-0000-0000-000000000001', 's1', 's1@example.test', 'h1', now()),
   ('00000000-0000-0000-0000-000000000002', 's2', 's2@example.test', 'h2', now());

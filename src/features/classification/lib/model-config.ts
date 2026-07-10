@@ -2,7 +2,7 @@
  * Central knobs for the classification job. The MODEL lives here as a single
  * swappable constant (options: `claude-haiku-4-5` | `claude-sonnet-5` |
  * `claude-opus-4-8`) so changing the cost/quality tier is a one-line edit that
- * can't break the call site. FSC-100 ships on Haiku 4.5 for P0 cost control.
+ * can't break the call site. The classifier ships on Haiku 4.5 for P0 cost control.
  *
  * Note: Haiku 4.5 rejects the `effort` parameter and needs no extended thinking
  * for a constrained classification, so the request deliberately sets neither.

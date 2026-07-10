@@ -1,4 +1,4 @@
--- pgTAP tests for FSC-98 ingestion (ingest_posts RPC + seen_count fold + repost
+-- pgTAP tests for ingestion (ingest_posts RPC + seen_count fold + repost
 -- CHECK). Run with `pnpm db:test` (local stack up). Rolled-back transaction, no
 -- residue — same convention as schema.test.sql / partner_rls.test.sql.
 
@@ -10,7 +10,7 @@ select plan(33);
 -- RPC. Ids chosen not to collide with seed.sql or the other test files.
 -- ---------------------------------------------------------------------------
 -- consented_at set: recompute_best_author_degree counts only active+consented sensors
--- (FSC-95 consent-aware aggregate) — which is also the real ingest state, since the gate
+-- (consent-aware aggregate) — which is also the real ingest state, since the gate
 -- refuses an unconsented sensor.
 insert into sensors (id, name, email, token_hash, consented_at) values
   ('f1000000-0000-4000-8000-000000000001', 'ing-s1', 'ing-s1@t.test', 'inghash1', now()),

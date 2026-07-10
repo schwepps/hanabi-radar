@@ -1,5 +1,5 @@
 -- Local-only seed data, applied by `supabase db reset` after the migrations.
--- Powers the FSC-90 Item List reference screen (local live data). Never put
+-- Powers the Item List reference screen (local live data). Never put
 -- production data or secrets here.
 --
 -- IMPORTANT: ids and linkedin_post_id values below must NOT collide with the
@@ -9,7 +9,7 @@
 --
 -- best_author_degree is derived by trigger from item_sources; we insert the
 -- source rows (with social_proof) and let the trigger set it. social_proof is
--- surfaced only via the FSC-106 reveal RPC (reveal_item_sources); it never lands
+-- surfaced only via the reveal RPC (reveal_item_sources); it never lands
 -- on the card/list payload.
 
 -- Sensors (collective members running the capture extension) ------------------
@@ -100,7 +100,7 @@ values
    'Multiplication des appels d''offres publics autour de la modernisation des SI de collectivités.', 'new');
 
 -- Warm-path sources (opportunities only — drives best_author_degree via trigger).
--- social_proof is surfaced only via reveal_item_sources (FSC-106), never on the card.
+-- social_proof is surfaced only via reveal_item_sources, never on the card.
 -- opp-1: a clean 1st-degree direct path (Camille). opp-2: no 1st-degree member, so the
 -- reveal shows the 2nd-degree member (Théo) AND a social-proof alternative (Camille knows
 -- a contact) together, strongest-first — exercising the "voie alternative" row.
@@ -113,7 +113,7 @@ insert into item_sources (item_id, sensor_id, author_degree, social_proof) value
    'Camille connaît un décideur chez Globex proche de Sophie Bernard');
 
 -- ============================================================================
--- FSC-93 — local demo partner (LOCAL-ONLY, login-ready)
+-- Local demo partner (LOCAL-ONLY, login-ready)
 -- ============================================================================
 -- Makes `pnpm db:reset` alone yield the full auth loop: sign in at /login with
 -- the credentials below, land on the dashboard, and see the seeded feed (RLS
@@ -159,7 +159,7 @@ insert into partners (id) values ('d1000000-0000-4000-8000-000000000001')
   on conflict (id) do update set active = true;
 
 -- ============================================================================
--- FSC-98 — local dev ingestion sensor (LOCAL-ONLY, ingest-ready)
+-- Local dev ingestion sensor (LOCAL-ONLY, ingest-ready)
 -- ============================================================================
 -- Lets `pnpm db:reset` + curl exercise POST /api/ingest end to end. The raw token
 -- is a LOCAL DEV value documented in docs/ingestion-api-contract.md; the table

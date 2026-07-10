@@ -7,7 +7,7 @@ import type { Database } from '@/types/database';
  * anon key and reads the session from the same cookies `@supabase/ssr` writes
  * (login Server Action + `src/proxy.ts`), so it runs as the Postgres
  * `authenticated` role — Realtime `postgres_changes` are then RLS-filtered per
- * partner (FSC-93). This is the OPPOSITE of `createServerSupabaseClient()`
+ * partner. This is the OPPOSITE of `createServerSupabaseClient()`
  * (service_role, server-only), which bypasses RLS and must never reach the browser.
  *
  * `createBrowserClient` de-duplicates its instance internally, so callers may

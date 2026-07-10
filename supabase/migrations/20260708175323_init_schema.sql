@@ -1,10 +1,10 @@
--- FSC-89 — Hanabi Radar initial schema.
+-- Hanabi Radar initial schema.
 --
 -- One deduplicated LinkedIn post = one `items` row; per-sensor sighting data lives
 -- on `item_sources` (SENSITIVE, RLS-protected). Enums, tables, indexes, RLS, the
 -- derived-aggregate + updated_at triggers, and documentation comments.
 --
--- Source of truth: FSC-89 ticket + CLAUDE.md. English identifiers. All timestamps
+-- Source of truth: CLAUDE.md. English identifiers. All timestamps
 -- are timestamptz; uuid PKs default to gen_random_uuid() (core in Postgres 13+).
 
 -- ============================================================================
@@ -54,7 +54,7 @@ create table items (
   posted_at                   timestamptz,                             -- app-derived from posted_at_raw + captured_at
   posted_at_raw               text,                                    -- LinkedIn relative string ("2h", "1d")
   captured_at                 timestamptz   not null,                  -- capture time (domain value, not row-insert time)
-  seen_count                  integer       not null default 0 check (seen_count >= 0),  -- maintained by the ingestion ticket (FSC-98)
+  seen_count                  integer       not null default 0 check (seen_count >= 0),  -- maintained by the ingestion pipeline
   best_author_degree          author_degree not null default 'none',   -- derived aggregate (trigger below)
   stream                      stream,                                  -- null = not yet classified
   domains                     text[]        not null default '{}',     -- Hanabi taxonomy tags
@@ -92,7 +92,7 @@ create index idx_item_sources_sensor_id on item_sources (sensor_id);  -- FK casc
 -- 4) Row Level Security + grants — deny-by-default (service_role only for now)
 --    RLS enabled + zero policies => anon/authenticated get 0 rows (and INSERT
 --    errors). REVOKE strips even the non-DML default grants (anon must not TRUNCATE).
---    Partner SELECT + the warm-intro conditional reveal (FSC-106) are deferred to
+--    Partner SELECT + the warm-intro conditional reveal are deferred to
 --    the auth ticket: when added, GRANT the minimal privilege alongside each
 --    policy, wrap auth.uid() as (select auth.uid()), and never WITH CHECK (true).
 -- ============================================================================
@@ -228,16 +228,16 @@ comment on column items.linkedin_post_id is
 comment on column items.best_author_degree is
   'Derived, NON-identifying aggregate: strongest connection degree across all sensors who saw this post. Reveals a warm path exists without revealing which sensor. Maintained by trigger from item_sources.';
 comment on column items.seen_count is
-  'Number of feeds the post appeared in (virality signal). Maintained by the ingestion pipeline (FSC-98), not by this schema.';
+  'Number of feeds the post appeared in (virality signal). Maintained by the ingestion pipeline, not by this schema.';
 comment on column items.posted_at is
   'Absolute post time, derived server-side from posted_at_raw + captured_at (LinkedIn renders relative timestamps).';
 
 comment on table  item_sources is
-  'Per-sensor sighting data (who saw what). SENSITIVE / GDPR personal data. RLS-protected, service_role only; exposed to partners only via the warm-intro reveal (FSC-106).';
+  'Per-sensor sighting data (who saw what). SENSITIVE / GDPR personal data. RLS-protected, service_role only; exposed to partners only via the warm-intro reveal.';
 comment on column item_sources.author_degree is
   'Sensor''s LinkedIn connection degree to the author. Per-sensor warm-intro signal; NEVER stored on items.';
 comment on column item_sources.social_proof is
-  'Name behind a warm introduction. Personal data; revealed only via the warm-intro flow (FSC-106).';
+  'Name behind a warm introduction. Personal data; revealed only via the warm-intro flow.';
 
 comment on column sensors.token_hash is
   'HASH of the sensor ingestion token — never store the raw token.';

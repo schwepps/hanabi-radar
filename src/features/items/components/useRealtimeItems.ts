@@ -6,7 +6,7 @@ import type { Tables } from '@/types/database';
 
 /**
  * Subscribe to live `items` changes for the signed-in partner and forward each
- * changed row to `onChange`. This wires the last acceptance criterion of FSC-103:
+ * changed row to `onChange`. This wires the last acceptance criterion of the live feed:
  * a newly classified item (the classification worker sets `stream` on a
  * status='new' row) reaches the open dashboard without a page reload.
  *

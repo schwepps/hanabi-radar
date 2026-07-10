@@ -10,7 +10,7 @@ import type { Database } from '@/types/database';
  *
  * Uses the browser-safe anon key plus the user's session cookies, so queries run
  * as the Postgres `authenticated` role with `auth.uid()` populated — the partner
- * RLS policies (FSC-93) decide row visibility. This is the OPPOSITE of
+ * RLS policies decide row visibility. This is the OPPOSITE of
  * `createServerSupabaseClient()` (service_role), which bypasses RLS and must stay
  * on trusted server-only jobs (ingestion, classification, cross-user aggregates).
  *

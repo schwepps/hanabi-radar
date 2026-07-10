@@ -162,7 +162,7 @@ site_url = "http://localhost:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Match the host the app is served on: Next dev serves http://localhost:3000, and opening the
 # app on a different host (e.g. 127.0.0.1) makes Next block Server Action POSTs as cross-origin.
-# Password sign-in (FSC-93) uses no redirect URL, but a coherent list keeps future email/OAuth
+# Password sign-in uses no redirect URL, but a coherent list keeps future email/OAuth
 # callbacks working. See README ## Authentication.
 additional_redirect_urls = ["http://localhost:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

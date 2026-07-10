@@ -4,7 +4,7 @@ import { initials } from './presentation';
 import { pathScore } from './sort';
 
 /**
- * Pure logic for the FSC-106 warm-intro reveal: validate the requested item id, order
+ * Pure logic for the warm-intro reveal: validate the requested item id, order
  * the RPC rows strongest-first, and map them to the view-model. Kept out of the
  * `'use server'` action (which can only export async functions) so it is unit-testable.
  */

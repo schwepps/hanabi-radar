@@ -8,8 +8,8 @@
  * updates the model's vocabulary, the allowed output values, and the UI filter
  * together — they can never drift.
  *
- * The set intentionally spans the full breadth of the wearehanabi.com collective
- * (FSC-100): the original nine domains plus the strategy/organization, change,
+ * The set intentionally spans the full breadth of the wearehanabi.com collective:
+ * the original nine domains plus the strategy/organization, change,
  * engineering, cloud, data, security, pricing, marketing, vendor, service-delivery
  * and CIO-advisory clusters the collective actually staffs.
  *
@@ -19,7 +19,7 @@
  */
 
 export const DOMAINS = [
-  // --- Core taxonomy (unchanged since FSC-90) ---
+  // --- Core taxonomy (stable since inception) ---
   {
     slug: 'pmo',
     gloss:
@@ -72,7 +72,7 @@ export const DOMAINS = [
       'Tender / bid phase — issuing or responding to an RFP (appel d’offres)',
     label: 'Appels d’offres',
   },
-  // --- Diversity additions (FSC-100 — cover the collective's full breadth) ---
+  // --- Diversity additions (cover the collective's full breadth) ---
   {
     slug: 'strategy_organization',
     gloss:

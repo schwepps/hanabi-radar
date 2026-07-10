@@ -1,10 +1,10 @@
--- FSC-98 — Post ingestion RPC + seen_count aggregate + repost integrity.
+-- Post ingestion RPC + seen_count aggregate + repost integrity.
 --
--- Builds on FSC-89 (schema, best_author_degree trigger). Three changes:
+-- Builds on the base schema (best_author_degree trigger). Three changes:
 --   (a) fold seen_count into the item_sources aggregate recompute (idempotent
 --       count(*), race-free under the existing FOR UPDATE lock);
 --   (b) a CHECK so a repost can never be stored without its original author
---       (else the read layer surfaces the resharer — the FSC-98 guardrail);
+--       (else the read layer surfaces the resharer — the ingestion guardrail);
 --   (c) ingest_posts(): the atomic batch upsert the endpoint calls as service_role.
 --
 -- Conventions (per db-patterns): search_path pinned; EXECUTE deny-by-default
@@ -30,7 +30,7 @@ declare
   v_best  public.author_degree;
   v_count integer;
 begin
-  -- Take the parent items row lock BEFORE reading sources (see FSC-89 rationale):
+  -- Take the parent items row lock BEFORE reading sources (see the base schema rationale):
   -- serializes concurrent recomputes so neither aggregate is computed from a stale
   -- snapshot that missed a concurrent sibling insert.
   perform 1 from public.items where id = p_item_id for update;
@@ -63,7 +63,7 @@ end;
 $$;
 
 comment on column public.items.seen_count is
-  'Derived: number of distinct sensors that reported this post. Maintained by the item_sources aggregate trigger (FSC-98), idempotent count(*).';
+  'Derived: number of distinct sensors that reported this post. Maintained by the item_sources aggregate trigger, idempotent count(*).';
 
 -- ============================================================================
 -- (b) A repost MUST carry its original author.
@@ -221,4 +221,4 @@ revoke execute on function public.ingest_posts(uuid, jsonb) from public;
 grant execute on function public.ingest_posts(uuid, jsonb) to service_role;
 
 comment on function public.ingest_posts(uuid, jsonb) is
-  'FSC-98 atomic batch ingestion: upsert items on linkedin_post_id, upsert item_sources per (item, sensor); dedup + seen_count + best_author_degree maintained by constraints/triggers. Per-post savepoints; service_role only.';
+  'Atomic batch ingestion: upsert items on linkedin_post_id, upsert item_sources per (item, sensor); dedup + seen_count + best_author_degree maintained by constraints/triggers. Per-post savepoints; service_role only.';

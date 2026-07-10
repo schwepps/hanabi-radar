@@ -1,4 +1,4 @@
--- pgTAP tests for the FSC-93 partner RLS gating. Run with `pnpm db:test` (local
+-- pgTAP tests for the partner RLS gating. Run with `pnpm db:test` (local
 -- stack must be up). Everything runs inside a rolled-back transaction, so it
 -- leaves no residue — same convention as schema.test.sql.
 --
@@ -28,7 +28,7 @@ insert into partners (id, active) values
   ('e1000000-0000-4000-8000-000000000001', true),    -- active partner
   ('e1000000-0000-4000-8000-000000000003', false);   -- off-boarded partner
 
--- s-rls is active + consented so FSC-106 reveal includes it; the extra sensors cover
+-- s-rls is active + consented so the reveal includes it; the extra sensors cover
 -- the reveal's filters (a 2nd active+consented member, an inactive one, a non-consented one).
 insert into sensors (id, name, email, token_hash, active, consented_at) values
   ('aaaa0000-0000-4000-8000-000000000001', 's-rls',       's-rls@rls.test',       'token-hash-rls',   true,  now()),
@@ -90,7 +90,7 @@ select is_empty(
   'non-partner: reveal_item_sources returns nothing (gated by is_partner)');
 
 -- ---------------------------------------------------------------------------
--- (iii) AUTHENTICATED PARTNER: sees items; item_sources STILL hidden (FSC-106).
+-- (iii) AUTHENTICATED PARTNER: sees items; item_sources STILL hidden.
 --       Criterion #1 positive + #3.
 -- ---------------------------------------------------------------------------
 select set_config('request.jwt.claims',
@@ -99,7 +99,7 @@ select ok(public.is_partner(),                     'partner: is_partner() true')
 select isnt_empty('select 1 from items',           'partner: reads items');
 select throws_ok('select 1 from item_sources', '42501', null, 'partner: item_sources STILL hidden');
 
--- FSC-106: the partner-gated reveal is the ONLY read path into item_sources.
+-- The partner-gated reveal is the ONLY read path into item_sources.
 select isnt_empty(
   $$select 1 from reveal_item_sources('cccc0000-0000-4000-8000-000000000001')$$,
   'partner: reveal_item_sources returns the sighting');
@@ -135,7 +135,7 @@ select set_config('request.jwt.claims',
   '{"sub":"e1000000-0000-4000-8000-000000000003","role":"authenticated"}', true);
 select ok(not public.is_partner(),                 'inactive partner: is_partner() false');
 select is_empty('select 1 from items',             'inactive partner: reads zero items');
--- FSC-106: the reveal is the ONLY partner-facing read of item_sources — pin that a
+-- The reveal is the ONLY partner-facing read of item_sources — pin that a
 -- revoked (inactive) partner gets nothing, distinct from the never-a-partner case above.
 select is_empty(
   $$select 1 from reveal_item_sources('cccc0000-0000-4000-8000-000000000001')$$,

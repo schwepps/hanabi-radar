@@ -1,8 +1,8 @@
-# Ingestion & Sensor API Contract (FSC-98)
+# Ingestion & Sensor API Contract
 
 > **Single source of truth** for the post-ingestion + sensor onboarding endpoints,
-> consumed by the `Hanabi-extension` repo (onboarding/consent: FSC-111; capture:
-> FSC-110; opt-out/purge: FSC-95). Change this and the extension together — never one
+> consumed by the `Hanabi-extension` repo (onboarding/consent, capture,
+> opt-out/purge). Change this and the extension together — never one
 > without the other.
 
 All endpoints run on the Node.js runtime and are called from the extension's
@@ -46,7 +46,7 @@ testing**).
 
 ## Sensor identity & consent
 
-Two auxiliary endpoints for extension onboarding (FSC-111). Same `Authorization: Bearer
+Two auxiliary endpoints for extension onboarding. Same `Authorization: Bearer
 <token>` scheme and the same uniform **401** on any auth failure (missing/malformed,
 unknown token, or `active = false`). Unlike `/api/ingest`, they do **not** require
 recorded consent. **No request body**; response is `application/json`. Error envelope is
@@ -73,7 +73,7 @@ passes.
 - **200**: `{ "consented_at": string }` — always a non-null ISO-8601 timestamp (the
   just-recorded or previously-recorded value).
 
-## Opt-out & erasure (GDPR — FSC-95)
+## Opt-out & erasure (GDPR)
 
 Two self-serve GDPR endpoints. Same `Authorization: Bearer <token>` scheme and the same
 uniform **401** on any auth failure. Unlike `/api/ingest`, they do **not** require the
@@ -204,7 +204,7 @@ mitigations).
   `items` row and this sensor's `item_sources` row.
 - **`seen_count`** = the number of **distinct active + consented sensors** that reported
   the post. A same-sensor resend does **not** increment it (idempotent). A new sensor
-  does. A sensor that later opts out or is erased drops back out of the count (FSC-95).
+  does. A sensor that later opts out or is erased drops back out of the count.
 - Re-capture updates: engagement counts are **greatest-wins** (never regress);
   `captured_at` and `posted_at` are kept from the **first** capture; classification
   and triage columns are never touched.

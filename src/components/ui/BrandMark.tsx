@@ -1,7 +1,7 @@
 /**
  * Brand mark + wordmark. The mark is the fireworks "spark" abstraction rendered
  * as a CSS radial-gradient rounded square (no image asset). Portable to the
- * extension consent screen (FSC-111) — it reads the same --hb-* token.
+ * extension consent screen — it reads the same --hb-* token.
  */
 export function BrandMark() {
   return (

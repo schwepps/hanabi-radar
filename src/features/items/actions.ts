@@ -13,7 +13,7 @@ interface ActionResult {
 
 /**
  * Persist an item's status as the signed-in partner (RLS-enforced anon client, NOT
- * service_role). The FSC-103 `items_update_status_partner` policy gates the write
+ * service_role). The `items_update_status_partner` policy gates the write
  * to active partners and the column grant limits it to `status`. Status is a single
  * shared column, so a processed/dismissed action is collective — visible to every
  * partner and durable across sessions.
@@ -71,7 +71,7 @@ export async function getCurrentItems(): Promise<ListItem[]> {
 }
 
 /**
- * FSC-106 warm-intro reveal for one item, as the signed-in partner (RLS/authz anon
+ * The warm-intro reveal for one item, as the signed-in partner (RLS/authz anon
  * client, NEVER service_role). Calls the `reveal_item_sources` RPC, which returns rows
  * only for an active partner and an empty set for anyone else. Unlike `setStatus`, an
  * empty result is a VALID "no warm path" — not a failure. The sensitive payload is

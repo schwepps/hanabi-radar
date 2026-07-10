@@ -9,7 +9,7 @@ import { isPublicPath } from '@/lib/auth/is-public-path';
  * rotated token back to the browser (the ONLY place that can happen — Server
  * Components can't set cookies), and (2) redirect unauthenticated requests for
  * gated routes to `/login`. The route guard in `page.tsx` is defense-in-depth on
- * top; RLS (FSC-93) is the actual data backstop.
+ * top; RLS is the actual data backstop.
  *
  * Two load-bearing rules from the Supabase SSR guide — do NOT "tidy" them away:
  *   1. Run NO code between `createServerClient` and `getUser()`.
@@ -72,7 +72,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Run on every route except `/api/*` (route handlers self-authenticate via a
-  // sensor token — FSC-98 — and must answer 401 JSON, not a 307 to /login; skipping
+  // sensor token — and must answer 401 JSON, not a 307 to /login; skipping
   // them also avoids a wasted getUser() session-refresh on every ingestion POST),
   // Next internals, and static asset files.
   matcher: [

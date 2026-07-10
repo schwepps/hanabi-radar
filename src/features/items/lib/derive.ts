@@ -12,8 +12,8 @@ type ItemRow = Tables<'items'>;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 /**
- * Accept only http(s) URLs. `items.url` is externally sourced (extension-scraped,
- * FSC-98), so a `javascript:`/`data:` value would be an XSS sink in the card's
+ * Accept only http(s) URLs. `items.url` is externally sourced (extension-scraped),
+ * so a `javascript:`/`data:` value would be an XSS sink in the card's
  * external link — reject anything that is not http(s).
  */
 function safeHttpUrl(url: string): string {
@@ -50,7 +50,7 @@ export function formatDateLabel(ageDays: number): string {
 
 function deriveAuthorMeta(row: ItemRow, kind: AuthorKind): string | null {
   if (kind === 'aggregate') {
-    // French pluralization: singular for 1 (and 0), plural from 2 up (FSC-120).
+    // French pluralization: singular for 1 (and 0), plural from 2 up.
     const n = row.seen_count;
     return `${n} publication${n > 1 ? 's' : ''}`;
   }
@@ -69,7 +69,7 @@ function deriveAuthorMeta(row: ItemRow, kind: AuthorKind): string | null {
 /**
  * Derive a card payload from a DB row, or `null` when the row is not shown in
  * the list — unclassified, `noise`, `dismissed`, or orphaned (`seen_count = 0`:
- * every sensor that saw it has opted out or been erased, FSC-95). Mirrors the
+ * every sensor that saw it has opted out or been erased). Mirrors the
  * fetch's `.neq('status','dismissed')` and `.gt('seen_count', 0)` in data.ts, so
  * a realtime dismissal or opt-out drops the row from the live feed too. Reposts
  * surface the ORIGINAL author (the decision-maker), never the resharer.

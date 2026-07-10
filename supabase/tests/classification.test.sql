@@ -1,4 +1,4 @@
--- pgTAP tests for FSC-100 classification: the write-path invariants (reusing the
+-- pgTAP tests for classification: the write-path invariants (reusing the
 -- existing columns) and the poison-item parking added by migration 20260709180000
 -- (classification_attempts + record_classification_failure). Run with `pnpm db:test`
 -- (local stack up). Rolled-back transaction, no residue — same convention as the

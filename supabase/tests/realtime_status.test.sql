@@ -1,4 +1,4 @@
--- pgTAP tests for FSC-103: `items` in the supabase_realtime publication (so the
+-- pgTAP tests for realtime: `items` in the supabase_realtime publication (so the
 -- dashboard receives postgres_changes) and the partner status-UPDATE RLS
 -- (items_update_status_partner + the column-scoped grant). Same rolled-back-txn,
 -- role/JWT-simulation convention as partner_rls.test.sql — leaves no residue.

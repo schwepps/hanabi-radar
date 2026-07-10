@@ -1,4 +1,4 @@
--- FSC-98 (sensor onboarding, consumed by FSC-111 in the extension repo) —
+-- Sensor onboarding (consumed by the extension repo) —
 -- record a sensor's GDPR consent in-product, idempotently and DB-authoritatively.
 --
 -- Consent is captured from the data subject IN the product (the extension), not only
@@ -36,4 +36,4 @@ revoke execute on function public.record_sensor_consent(uuid) from public;
 grant execute on function public.record_sensor_consent(uuid) to service_role;
 
 comment on function public.record_sensor_consent(uuid) is
-  'FSC-98: set sensors.consented_at to now() on first consent (idempotent — never overwrites); returns the effective consent timestamp, or null for an unknown sensor. service_role only.';
+  'Set sensors.consented_at to now() on first consent (idempotent — never overwrites); returns the effective consent timestamp, or null for an unknown sensor. service_role only.';
