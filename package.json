@@ -25,6 +25,7 @@
     "db:test": "supabase test db",
     "db:types": "node scripts/db-types.mjs",
     "db:migration": "supabase migration new",
+    "e2e:ingest": "bash scripts/e2e-ingest-matrix.sh",
     "prepare": "husky"
   },
   "lint-staged": {
