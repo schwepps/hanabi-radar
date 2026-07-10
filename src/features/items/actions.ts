@@ -3,7 +3,8 @@
 import { createServerSupabaseAuthClient } from '@/lib/supabase/server-auth';
 import type { Enums } from '@/types/database';
 import { fetchListItems } from './data';
-import type { ListItem } from './types';
+import { revealItemIdSchema, toRevealPaths } from './lib/reveal';
+import type { ListItem, RevealResponse } from './types';
 
 /** Consistent action result: `{}` on success, `{ error }` on failure. */
 interface ActionResult {
@@ -67,4 +68,29 @@ export async function setItemProcessed(
 export async function getCurrentItems(): Promise<ListItem[]> {
   const supabase = await createServerSupabaseAuthClient();
   return fetchListItems(supabase);
+}
+
+/**
+ * FSC-106 warm-intro reveal for one item, as the signed-in partner (RLS/authz anon
+ * client, NEVER service_role). Calls the `reveal_item_sources` RPC, which returns rows
+ * only for an active partner and an empty set for anyone else. Unlike `setStatus`, an
+ * empty result is a VALID "no warm path" — not a failure. The sensitive payload is
+ * fetched on demand here and never enters the list/realtime feed.
+ */
+export async function revealWarmPath(itemId: string): Promise<RevealResponse> {
+  const parsed = revealItemIdSchema.safeParse(itemId);
+  if (!parsed.success) {
+    return { ok: false, error: 'Identifiant invalide.' };
+  }
+
+  const supabase = await createServerSupabaseAuthClient();
+  const { data, error } = await supabase.rpc('reveal_item_sources', {
+    p_item_id: parsed.data,
+  });
+
+  if (error != null) {
+    console.error('[items] revealWarmPath failed:', error.message);
+    return { ok: false, error: 'La révélation a échoué.' };
+  }
+  return { ok: true, paths: toRevealPaths(data ?? []) };
 }

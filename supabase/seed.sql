@@ -9,7 +9,8 @@
 --
 -- best_author_degree is derived by trigger from item_sources; we insert the
 -- source rows (with social_proof) and let the trigger set it. social_proof is
--- seeded for future FSC-106 realism but the dashboard never reads it.
+-- surfaced only via the FSC-106 reveal RPC (reveal_item_sources); it never lands
+-- on the card/list payload.
 
 -- Sensors (collective members running the capture extension) ------------------
 insert into sensors (id, name, email, token_hash, consented_at) values
@@ -99,12 +100,17 @@ values
    'Multiplication des appels d''offres publics autour de la modernisation des SI de collectivités.', 'new');
 
 -- Warm-path sources (opportunities only — drives best_author_degree via trigger).
--- social_proof is the reveal holder (FSC-106); the dashboard never reads it.
+-- social_proof is surfaced only via reveal_item_sources (FSC-106), never on the card.
+-- opp-1: a clean 1st-degree direct path (Camille). opp-2: no 1st-degree member, so the
+-- reveal shows the 2nd-degree member (Théo) AND a social-proof alternative (Camille knows
+-- a contact) together, strongest-first — exercising the "voie alternative" row.
 insert into item_sources (item_id, sensor_id, author_degree, social_proof) values
   ('b1000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'first',
    'Camille Roy est en relation directe avec Jean Dupont'),
   ('b1000000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000002', 'second',
-   'Théo Marchand a 3 relations en commun avec Sophie Bernard');
+   'Théo Marchand a 3 relations en commun avec Sophie Bernard'),
+  ('b1000000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000001', 'none',
+   'Camille connaît un décideur chez Globex proche de Sophie Bernard');
 
 -- ============================================================================
 -- FSC-93 — local demo partner (LOCAL-ONLY, login-ready)

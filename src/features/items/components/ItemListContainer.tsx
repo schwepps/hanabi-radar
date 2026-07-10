@@ -165,7 +165,11 @@ export function ItemListContainer({ initialItems }: ItemListContainerProps) {
         </main>
       </div>
       {revealItem != null && (
-        <RevealModal item={revealItem} onClose={actions.closeReveal} />
+        <RevealModal
+          key={revealItem.id}
+          item={revealItem}
+          onClose={actions.closeReveal}
+        />
       )}
     </div>
   );

@@ -142,6 +142,31 @@ export function hopLabel(degree: Degree): string {
   }
 }
 
+/**
+ * Label for one revealed warm-intro path (FSC-106). A degree path reuses `hopLabel`; a
+ * `none` row is a social-proof alternative (the sensor isn't connected, but a named
+ * 1st-degree contact can bridge).
+ */
+export function revealPathLabel(degree: Degree): string {
+  return degree === 'none'
+    ? 'Relation de 1er degré · voie alternative'
+    : hopLabel(degree);
+}
+
+/**
+ * "vu le 8 juil." — calendar date for a reveal sighting (`item_sources.seen_at`).
+ * Pinned to Europe/Paris (the French collective's timezone) so the coarse day label is
+ * deterministic regardless of the machine timezone.
+ */
+export function formatSeenAt(iso: string): string {
+  const date = new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Europe/Paris',
+  }).format(new Date(iso));
+  return `vu le ${date}`;
+}
+
 /** Initials from a display name (max two letters). */
 export function initials(name: string): string {
   return name
