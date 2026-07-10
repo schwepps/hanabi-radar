@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# FSC-122 — cross-repo /api/ingest contract matrix.
+# Cross-repo /api/ingest contract matrix.
 #
 # Exercises every branch of the ingestion contract (docs/ingestion-api-contract.md)
 # end-to-end over real HTTP + the real database: all status codes, the exact error
@@ -224,10 +224,10 @@ bad422 "$(batch "$(post "$NS-rp" | jq -c '. + {is_repost:true}')")" "E21 repost 
 assert_json '.error.issues[0].path' "posts.0.original_author_name" "E21 repost issue path"
 bad422 "$(batch "$(post "$NS-rn" | jq -c '. + {reaction_count:-1}')")" "E22 negative reaction_count"
 bad422 "$(batch "$(post "$NS-ri" | jq -c '. + {reaction_count:1.5}')")" "E23 non-integer reaction_count"
-# FSC-119: an over-int4 count must give a clean 422 here, NOT a silent per-post DB drop.
-bad422 "$(batch "$(post "$NS-ov" | jq -c '. + {reaction_count:3000000000}')")" "E24 over-int4 reaction_count (FSC-119)"
+# An over-int4 count must give a clean 422 here, NOT a silent per-post DB drop.
+bad422 "$(batch "$(post "$NS-ov" | jq -c '. + {reaction_count:3000000000}')")" "E24 over-int4 reaction_count"
 bad422 "$(batch "$(post "$NS-cn" | jq -c '. + {comment_count:-5}')")" "E25 negative comment_count"
-bad422 "$(batch "$(post "$NS-co" | jq -c '. + {comment_count:3000000000}')")" "E26 over-int4 comment_count (FSC-119)"
+bad422 "$(batch "$(post "$NS-co" | jq -c '. + {comment_count:3000000000}')")" "E26 over-int4 comment_count"
 bad422 "$(batch "$(post "$NS-ht" | jq -c '.hashtags = ([range(0;65) | tostring])')")" "E27 hashtags over cap (65)"
 
 # ============================================================ F. 200 happy path
@@ -267,7 +267,7 @@ assert_db "select seen_count from items where linkedin_post_id='$NS-h1'" 2 "H2 s
 
 # ============================================================ I. Per-post isolation (failed[])
 # A Zod-valid post can no longer reach the DB savepoint over HTTP (Zod mirrors the DB
-# constraints — that is the point of FSC-119). Exercise the RPC's per-post isolation
+# constraints — that is the point). Exercise the RPC's per-post isolation
 # directly: a repost with no original author violates the DB CHECK (23514) and must
 # isolate into failed[] while the good sibling still commits.
 ISO="$(jq -cn --arg ns "$NS" --arg cap "$CAP" '[

@@ -1,13 +1,13 @@
--- FSC-93 — Partner authentication gating (RLS) for the dashboard feed.
+-- Partner authentication gating (RLS) for the dashboard feed.
 --
--- Adds the partner authorization plane on top of the FSC-89 schema:
+-- Adds the partner authorization plane on top of the base schema:
 --   * a thin `partners` table keyed 1:1 to auth.users (identity/PII stays in auth.users),
 --   * a SECURITY DEFINER predicate is_partner() (the RLS gate AND the "am I a partner?" RPC),
 --   * a SELECT grant + policy letting an authenticated *partner* read the shared `items` feed.
 --
--- Deliberately UNTOUCHED: item_sources (warm-intro reveal is FSC-106 — stays hidden,
+-- Deliberately UNTOUCHED: item_sources (warm-intro reveal stays hidden,
 -- service_role-only) and sensors (ingestion identity is a hashed token verified
--- server-side, FSC-98). service_role keeps bypassing RLS with its FSC-89 grants, so
+-- server-side). service_role keeps bypassing RLS with its base grants, so
 -- server-only jobs (ingestion, classification) are unaffected.
 --
 -- Auth settings (site_url, redirect URLs, providers, signup/confirmation) are NOT schema
@@ -68,7 +68,7 @@ comment on function public.is_partner() is
 -- 3) items — authenticated partners may read the shared, non-sensitive feed
 -- ============================================================================
 -- RLS filters ON TOP of table privileges; without this GRANT the policy is inert
--- (authenticated hits permission-denied before any policy runs). FSC-89 revoked all from
+-- (authenticated hits permission-denied before any policy runs). The base schema revoked all from
 -- authenticated, so re-grant the minimum: SELECT only (dashboard is read-only; writes stay
 -- on service_role/ingestion — no INSERT/UPDATE/DELETE policy, hence no WITH CHECK misuse).
 grant select on items to authenticated;
@@ -79,8 +79,8 @@ create policy items_select_partner
   to authenticated
   using ((select public.is_partner()));
 
--- item_sources: intentionally UNTOUCHED. Already fully hidden by FSC-89 (RLS enabled +
+-- item_sources: intentionally UNTOUCHED. Already fully hidden by the base schema (RLS enabled +
 --   FORCE, zero policies, granted to service_role only) — an authenticated partner reads
---   zero rows (permission-denied: no grant). The conditional warm-intro reveal is FSC-106.
+--   zero rows (permission-denied: no grant). The conditional warm-intro reveal comes later.
 -- sensors:      intentionally UNTOUCHED. Ingestion identity is a hashed token verified
---   server-side (FSC-98); sensors stay service_role-only, no auth.users linkage, no policy.
+--   server-side; sensors stay service_role-only, no auth.users linkage, no policy.

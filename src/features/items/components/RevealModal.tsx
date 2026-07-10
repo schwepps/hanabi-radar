@@ -119,7 +119,7 @@ function AuthorNode({ name }: { name: string }) {
 }
 
 /**
- * Permissioned warm-intro reveal (FSC-106). On open it fetches the sensitive holder
+ * Permissioned warm-intro reveal. On open it fetches the sensitive holder
  * list on demand via the `revealWarmPath` Server Action (permission-checked
  * `reveal_item_sources` RPC), shows the members who can introduce — strongest-first,
  * with a social-proof alternative when no member is 1st-degree — and never lets that

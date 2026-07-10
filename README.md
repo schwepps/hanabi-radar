@@ -1,14 +1,14 @@
-# Hanabi Radar — app
+# Hanabi Intelligence — app
 
-Next.js dashboard + Supabase backend for **Hanabi Radar**: it captures LinkedIn
+Next.js dashboard + Supabase backend for **Hanabi Intelligence**: it captures LinkedIn
 posts (via a separate browser extension), deduplicates them, classifies them with
 AI into three streams (market signal / business opportunity / trend), and presents
 them to the Hanabi collective's partners.
 
 This repository is the **app** (dashboard + backend). It ships the technical
-foundation (FSC-84), the Supabase schema (FSC-89), the **Daybreak** design system +
-Item List reference screen (FSC-90), partner auth (FSC-93), the sensor ingestion API
-(FSC-98), and AI classification (FSC-100).
+foundation, the Supabase schema, the **Daybreak** design system, partner auth, the
+sensor ingestion API, AI classification, a live dashboard (Realtime updates + persisted
+status), the warm-intro source reveal, and self-serve sensor GDPR opt-out and erasure.
 
 ## Tech stack
 
@@ -37,7 +37,7 @@ pnpm dev                   # start the dev server
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — the Item List dashboard
-(Daybreak design system, FSC-90) renders the seeded items.
+(Daybreak design system) renders the seeded items.
 
 ## Database
 
@@ -96,22 +96,24 @@ Set the hosted keys in the Vercel project settings — never in the repo.
 
 ## Authentication
 
-The dashboard is **partners-only** (FSC-93). Access is enforced by **Row Level
+The dashboard is **partners-only**. Access is enforced by **Row Level
 Security** (shipped as the `..._partner_rls.sql` migration — never set by hand) plus
 an SSR email+password login. An authenticated user is a **partner** iff a row exists
 for them in `partners` (`active = true`); a partner reads the shared `items` feed, a
 non-partner sees nothing, and an unauthenticated visitor is redirected to `/login`.
 `item_sources` (who saw what) stays hidden at the table level (RLS-forced,
 `service_role`-only); a partner reads it only on demand through the `reveal_item_sources`
-RPC — the permissioned warm-intro reveal (FSC-106), gated by `is_partner()` and limited
+RPC — the permissioned warm-intro reveal, gated by `is_partner()` and limited
 to active, consented sensors. Sensors authenticate ingestion with a hashed token
-(`sensors.token_hash`), not Supabase Auth (FSC-98).
+(`sensors.token_hash`), not Supabase Auth; a sensor can self-serve **opt out**
+(`POST /api/sensor/opt-out`, deactivate) or exercise its GDPR **right to erasure**
+(`DELETE /api/sensor/me`) at any time — both token-authed and idempotent.
 
 ### Auth settings per environment
 
 Auth config lives **outside migrations** (Supabase manages GoTrue, not Postgres DDL).
 Local truth = `supabase/config.toml [auth]`; hosted truth = the Supabase dashboard →
-Authentication (applied at deploy time, FSC-107). The values that must match per env:
+Authentication (applied at deploy time). The values that must match per env:
 
 | Setting                    | Local (`config.toml`)                | Hosted (Vercel EU)                                   |
 | -------------------------- | ------------------------------------ | ---------------------------------------------------- |
@@ -168,7 +170,7 @@ on conflict (id) do update set active = true;
 New items land unclassified (`stream IS NULL`); a secured, cron-triggered worker
 classifies them with Claude — one call per item — into a `stream` (signal /
 opportunity / trend / noise) with expertise-domain tags, a heat level, and a
-one-sentence French summary (FSC-100). Pure-noise and still-unclassified items stay
+one-sentence French summary. Pure-noise and still-unclassified items stay
 off the dashboard. The expertise-domain taxonomy is single-sourced in
 [`src/lib/taxonomy.ts`](src/lib/taxonomy.ts), shared by the classifier and the
 dashboard filter.
@@ -212,7 +214,7 @@ elevation — live as plain CSS custom properties in
   `@theme inline`, so utilities (`bg-surface`, `text-ink`, `bg-stream-signal`, …)
   resolve to the tokens with no duplicated values.
 - `tokens.css` is framework-neutral (plain CSS, no Tailwind directives) so the
-  separate `Hanabi-extension` repo copies it **verbatim** (FSC-111 consent screen) —
+  separate `hanabi-intelligence-extension` repo copies it **verbatim** for its consent screen —
   there is no shared package. Never add Tailwind directives there.
 - Fonts (Figtree + JetBrains Mono) load via `next/font` in the app; the extension
   uses the plain font stacks documented in `tokens.css`.
@@ -220,20 +222,23 @@ elevation — live as plain CSS custom properties in
 
 The **Item List** (`src/app/page.tsx` → `src/features/items/`) is the reference
 screen demonstrating the system, including the permissioned warm-intro reveal modal.
+It hydrates from a Server Component, then updates live via Supabase Realtime as items
+are classified; the processed/dismissed `status` is persisted and shared across partners.
 
 ## Quality commands
 
-| Command             | What it does                                               |
-| ------------------- | ---------------------------------------------------------- |
-| `pnpm dev`          | Start the development server (Turbopack)                   |
-| `pnpm build`        | Production build                                           |
-| `pnpm start`        | Serve the production build                                 |
-| `pnpm lint`         | ESLint (flat config), fails on any warning or error        |
-| `pnpm lint:fix`     | ESLint with autofix                                        |
-| `pnpm format`       | Format the codebase with Prettier                          |
-| `pnpm format:check` | Check formatting without writing                           |
-| `pnpm typecheck`    | TypeScript type checking (`next typegen` + `tsc --noEmit`) |
-| `pnpm test`         | Run the test suite (Vitest)                                |
+| Command             | What it does                                                                     |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `pnpm dev`          | Start the development server (Turbopack)                                         |
+| `pnpm build`        | Production build                                                                 |
+| `pnpm start`        | Serve the production build                                                       |
+| `pnpm lint`         | ESLint (flat config), fails on any warning or error                              |
+| `pnpm lint:fix`     | ESLint with autofix                                                              |
+| `pnpm format`       | Format the codebase with Prettier                                                |
+| `pnpm format:check` | Check formatting without writing                                                 |
+| `pnpm typecheck`    | TypeScript type checking (`next typegen` + `tsc --noEmit`)                       |
+| `pnpm test`         | Run the test suite (Vitest)                                                      |
+| `pnpm e2e:ingest`   | Run the `/api/ingest` contract matrix against a live dev server + local Supabase |
 
 **Before opening a PR:** `pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm format:check` must pass (mirrors CI).
 
@@ -250,5 +255,10 @@ Hooks are installed by husky on the first `pnpm install`. A non-conforming commi
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on every push and pull request: format check, lint,
-typecheck, build, and test.
+`.github/workflows/ci.yml` runs on every push and pull request as two jobs:
+
+- **`quality`** — format check, lint, typecheck, build, and test.
+- **`database`** — boots the local Supabase stack, rebuilds the schema from migrations
+  (`db:reset`), runs the pgTAP tests, fails if the generated types are out of sync with
+  the migrations, then runs the `/api/ingest` contract matrix (`pnpm e2e:ingest`) against
+  a live dev server.

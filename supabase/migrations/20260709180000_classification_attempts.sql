@@ -1,4 +1,4 @@
--- FSC-100 — poison-item guard for the classification worker.
+-- Poison-item guard for the classification worker.
 --
 -- A classification that fails is left `stream IS NULL` and retried on the next tick.
 -- Unbounded, a permanently-failing item (a persistent refusal, or output that never
@@ -18,9 +18,9 @@ alter table items
   add column classification_error text;
 
 comment on column items.classification_attempts is
-  'FSC-100: failed classification attempts. The worker parks an item (stops fetching it) once this reaches the configured max, so a poison item cannot block the FIFO queue.';
+  'Failed classification attempts. The worker parks an item (stops fetching it) once this reaches the configured max, so a poison item cannot block the FIFO queue.';
 comment on column items.classification_error is
-  'FSC-100: last classification failure reason (refusal/invalid/max_tokens/rate_limit/timeout/error), for debugging parked items.';
+  'Last classification failure reason (refusal/invalid/max_tokens/rate_limit/timeout/error), for debugging parked items.';
 
 -- Atomic failure recorder: park a permanent failure immediately (jump to the max),
 -- otherwise increment (capped at the max). Guarded by `stream IS NULL` so it can never
@@ -48,4 +48,4 @@ revoke execute on function public.record_classification_failure(uuid, text, bool
 grant execute on function public.record_classification_failure(uuid, text, boolean, integer) to service_role;
 
 comment on function public.record_classification_failure(uuid, text, boolean, integer) is
-  'FSC-100: record a classification failure on a still-pending item — park permanent failures at the max, otherwise increment (capped). service_role only.';
+  'Record a classification failure on a still-pending item — park permanent failures at the max, otherwise increment (capped). service_role only.';

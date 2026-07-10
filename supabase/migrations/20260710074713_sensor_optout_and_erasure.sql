@@ -1,4 +1,4 @@
--- FSC-95 — Sensor GDPR opt-out & erasure.
+-- Sensor GDPR opt-out & erasure.
 --
 -- The ingestion gate already refuses an inactive sensor (uniform 401), so "no new data
 -- after opt-out" holds. This migration adds the two missing halves — a self-serve
@@ -27,7 +27,7 @@
 -- A sensor's sighting counts toward the card aggregate AND is revealable iff the sensor is
 -- active and has consented. Centralising the predicate keeps recompute_best_author_degree,
 -- the backfill, and reveal_item_sources from drifting apart — which would break the exact
--- card/reveal equivalence FSC-95 exists to guarantee. IMMUTABLE; references no tables, so
+-- card/reveal equivalence this migration exists to guarantee. IMMUTABLE; references no tables, so
 -- the pinned search_path is belt-and-braces (no object names to resolve).
 create or replace function public.is_counted_sensor(
   p_active       boolean,
@@ -45,20 +45,20 @@ revoke execute on function public.is_counted_sensor(boolean, timestamptz) from p
 grant  execute on function public.is_counted_sensor(boolean, timestamptz) to service_role;
 
 comment on function public.is_counted_sensor(boolean, timestamptz) is
-  'FSC-95: the single definition of a "counted" sighting — the sensor is active AND has consented. Shared by recompute_best_author_degree, the FSC-95 backfill, and reveal_item_sources so the card aggregate and the warm-intro reveal can never diverge.';
+  'The single definition of a "counted" sighting — the sensor is active AND has consented. Shared by recompute_best_author_degree, the backfill, and reveal_item_sources so the card aggregate and the warm-intro reveal can never diverge.';
 
 -- ============================================================================
--- (a) Make the card aggregate consent/active-aware — the FSC-95 reconciliation.
+-- (a) Make the card aggregate consent/active-aware — the reconciliation.
 -- ============================================================================
 -- items.best_author_degree / seen_count were aggregated over ALL item_sources rows,
--- while reveal_item_sources (FSC-106) shows only active + consented sensors. They could
+-- while reveal_item_sources shows only active + consented sensors. They could
 -- not diverge while ingestion gated every write on active+consent — but a soft opt-out
 -- that deactivates a sensor WITHOUT deleting its rows would let the card badge over-claim
--- a warm path the reveal hides. This was deferred to FSC-95 in
+-- a warm path the reveal hides. This was deferred to this migration in
 -- 20260709222221_reveal_item_sources.sql:31-37; resolve it by counting the SAME
 -- population the reveal does. In steady-state ingestion the sensor is always
 -- active+consented, so this changes nothing there; it only takes effect after opt-out /
--- consent withdrawal. Body is otherwise identical to the FSC-98 version (parent FOR
+-- consent withdrawal. Body is otherwise identical to the ingestion version (parent FOR
 -- UPDATE lock, strength-rank CASE, widened write guard, seen_count fold).
 create or replace function public.recompute_best_author_degree(p_item_id uuid)
 returns void
@@ -108,7 +108,7 @@ $$;
 -- ============================================================================
 -- (a2) Route reveal_item_sources through the shared predicate.
 -- ============================================================================
--- Behaviour-preserving redefinition of the FSC-106 reveal: the inline
+-- Behaviour-preserving redefinition of the reveal: the inline
 -- `s.active and s.consented_at is not null` filter becomes is_counted_sensor() so the
 -- reveal and the card aggregate share ONE definition of a counted sighting. Body is
 -- otherwise byte-for-byte the 20260709222221 version (SECURITY DEFINER owned by postgres
@@ -256,9 +256,9 @@ revoke execute on function public.erase_sensor(uuid) from public;
 grant  execute on function public.erase_sensor(uuid) to service_role;
 
 comment on function public.deactivate_sensor(uuid) is
-  'FSC-95 self-serve opt-out: sets sensors.active=false (idempotent) and recomputes the card aggregate for the sensor''s items so the now-inactive sensor is dropped from best_author_degree/seen_count. Retains the sensor + its item_sources rows. Returns false only for an unknown id. service_role only.';
+  'Self-serve opt-out: sets sensors.active=false (idempotent) and recomputes the card aggregate for the sensor''s items so the now-inactive sensor is dropped from best_author_degree/seen_count. Retains the sensor + its item_sources rows. Returns false only for an unknown id. service_role only.';
 comment on function public.erase_sensor(uuid) is
-  'FSC-95 right to erasure: deletes the sensor row; item_sources links cascade away and the aggregate self-heals via the trigger. items are retained (third-party content). Returns false for an unknown id. service_role only.';
+  'Right to erasure: deletes the sensor row; item_sources links cascade away and the aggregate self-heals via the trigger. items are retained (third-party content). Returns false for an unknown id. service_role only.';
 
 -- ============================================================================
 -- (d) Backfill: re-derive only the items the new rule actually changes.

@@ -32,6 +32,21 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('heat = null');
     expect(prompt).toContain('one sentence, in French');
   });
+
+  it('scopes opportunity to include in-scope hiring while fencing it', () => {
+    // opportunity now explicitly covers a company/recruiter HIRING for an
+    // in-scope role, and noise distinguishes an individual's job-SEEKING.
+    expect(prompt).toContain('HIRING for a role in a domain the collective');
+    expect(prompt.toLowerCase()).toContain('job-seeking');
+    // the anti-flood fence: out-of-scope hiring stays noise.
+    expect(prompt).toContain('purely administrative/retail');
+  });
+
+  it('carries the web3 / AI / tech-hiring calibration examples', () => {
+    expect(prompt).toContain('Solidity');
+    expect(prompt).toContain('web3_blockchain');
+    expect(prompt).toContain('ai_ml');
+  });
 });
 
 describe('buildUserContent', () => {

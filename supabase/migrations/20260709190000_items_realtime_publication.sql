@@ -1,11 +1,11 @@
--- FSC-103 — enable Supabase Realtime for the partner dashboard.
+-- Enable Supabase Realtime for the partner dashboard.
 --
 -- The dashboard subscribes to postgres_changes (UPDATE) on `items` so a newly
 -- classified item appears live: the classification worker sets `stream` on a
--- status='new' row (FSC-100), and that UPDATE must reach connected partners.
+-- status='new' row, and that UPDATE must reach connected partners.
 -- Realtime only emits changes for tables in the `supabase_realtime` publication;
 -- `items` was never added, so no events were delivered. RLS still gates delivery
--- per-subscriber (items_select_partner, FSC-93) — this only turns the stream on.
+-- per-subscriber (items_select_partner) — this only turns the stream on.
 --
 -- No REPLICA IDENTITY change: we read only the NEW row on UPDATE (Postgres logs the
 -- full new tuple regardless of replica identity) and never subscribe to DELETE, so

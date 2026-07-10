@@ -1,4 +1,4 @@
--- pgTAP tests for FSC-95 sensor GDPR opt-out & erasure (deactivate_sensor,
+-- pgTAP tests for sensor GDPR opt-out & erasure (deactivate_sensor,
 -- erase_sensor, and the consent-aware recompute_best_author_degree). Run with
 -- `pnpm db:test` (local stack up). Rolled-back transaction, no residue — same
 -- convention as sensor_consent.test.sql / ingestion.test.sql.
@@ -46,7 +46,7 @@ insert into item_sources (item_id, sensor_id, author_degree) values
 
 -- ===========================================================================
 -- (A) Consent-aware aggregate: a non-consented sensor never counts, even when it
---     holds the strongest degree (the FSC-95 reconciliation, at rest).
+--     holds the strongest degree (the reconciliation, at rest).
 -- ===========================================================================
 select is((select best_author_degree from items where id = 'c3000000-0000-4000-8000-000000000004'),
   'third'::author_degree, 'A: non-consented first-degree sensor excluded -> best is third');
@@ -109,7 +109,7 @@ select is(public.erase_sensor('f3000000-0000-4000-8000-0000000000ff'),
 -- ===========================================================================
 -- (E) Backfill scoping: recompute ONLY items with a non-counted (inactive/
 --     unconsented) source; a source-less item is NEVER recomputed (recompute
---     would wrongly zero its seen_count — the FSC-95 backfill guard).
+--     would wrongly zero its seen_count — the backfill guard).
 -- ===========================================================================
 -- A source-less item with a manually-set count (models a seeded aggregate row).
 insert into items (id, linkedin_post_id, author_name, url, captured_at, seen_count)

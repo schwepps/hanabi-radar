@@ -1,4 +1,4 @@
--- pgTAP tests for record_sensor_consent (FSC-98 sensor onboarding). Run with
+-- pgTAP tests for record_sensor_consent (sensor onboarding). Run with
 -- `pnpm db:test` (local stack up). Rolled-back transaction, no residue.
 
 begin;

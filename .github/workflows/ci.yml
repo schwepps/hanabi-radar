@@ -96,7 +96,7 @@ jobs:
             exit 1
           fi
 
-      # FSC-122: run the cross-repo /api/ingest contract matrix against a live dev server
+      # Run the cross-repo /api/ingest contract matrix against a live dev server
       # backed by the Supabase stack booted above. Catches HTTP/DB contract drift (e.g. the
       # issues[].path string-vs-array mismatch) that stubbed unit tests + pgTAP miss.
       - name: Export local Supabase keys for the dev server

@@ -3,7 +3,7 @@ import { Constants } from '@/types/database';
 
 /**
  * Zod schema for the ingestion payload — the runtime trust boundary between the
- * capture extension (separate repo, FSC-110) and the database. Enum members are
+ * capture extension (separate repo) and the database. Enum members are
  * sourced from the generated DB `Constants` so the schema can never drift from the
  * Postgres enums. This is the authoritative shape; `docs/ingestion-api-contract.md`
  * documents it for the extension.
@@ -25,7 +25,7 @@ const MAX_HASHTAGS = 64;
 // Postgres int4 upper bound. Zod must stay a SUPERSET of the DB column types: the count
 // columns are int4, so an unbounded Zod number lets a value > 2^31-1 pass validation and
 // then throw 22003 in the ingest_posts cast — silently isolating the post into failed[]
-// instead of a clean 422 (FSC-119). Cap here so the boundary rejects it deterministically.
+// instead of a clean 422. Cap here so the boundary rejects it deterministically.
 const INT4_MAX = 2_147_483_647;
 
 /** Trim strings and treat blank as absent (null); pass non-strings through so the

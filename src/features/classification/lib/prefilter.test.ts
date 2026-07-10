@@ -108,4 +108,42 @@ describe('prefilterItem', () => {
       expect(prefilterItem(item).decision).toBe('send');
     });
   });
+
+  describe('web3 / AI / tech hiring (broadened scope)', () => {
+    it('sends the web3 recruiter job ad (the previously-missed opportunity)', () => {
+      const item = makePendingItem({
+        post_type: 'text',
+        text: 'Talent3 Recruiters is Hiring: Senior Solidity Engineer',
+        hashtags: ['soliditydeveloper', 'defijobs', 'web3hiring'],
+      });
+      expect(prefilterItem(item).decision).toBe('send');
+    });
+
+    it('sends a non-hiring web3 post via the new keywords', () => {
+      const item = makePendingItem({
+        post_type: 'text',
+        text: 'Building a DeFi protocol on Ethereum with Solidity.',
+        hashtags: [],
+      });
+      expect(prefilterItem(item).decision).toBe('send');
+    });
+
+    it('sends an AI/ML post', () => {
+      const item = makePendingItem({
+        post_type: 'text',
+        text: 'We are scaling our machine learning platform this quarter.',
+        hashtags: ['mlops'],
+      });
+      expect(prefilterItem(item).decision).toBe('send');
+    });
+
+    it('still noises an out-of-scope short post with no tech keyword', () => {
+      const item = makePendingItem({
+        post_type: 'text',
+        text: 'Belle journée ensoleillée à Paris',
+        hashtags: [],
+      });
+      expect(prefilterItem(item).decision).toBe('noise');
+    });
+  });
 });

@@ -102,7 +102,7 @@ describe('deriveListItem', () => {
     expect(item?.authorMeta).toBe('14 publications');
   });
 
-  it('pluralizes the aggregate publication count (FSC-120)', () => {
+  it('pluralizes the aggregate publication count', () => {
     expect(
       deriveListItem(makeItemRow({ stream: 'trend', seen_count: 1 }), NOW)
         ?.authorMeta,
@@ -124,7 +124,7 @@ describe('deriveListItem', () => {
       ),
     ).toBeNull();
     // Orphaned rows — every sensor that saw it opted out/erased, so seen_count=0
-    // (FSC-95) — drop out too (mirrors data.ts .gt('seen_count', 0)).
+    // drop out too (mirrors data.ts .gt('seen_count', 0)).
     expect(
       deriveListItem(makeItemRow({ stream: 'signal', seen_count: 0 }), NOW),
     ).toBeNull();

@@ -19,17 +19,21 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Hanabi Radar',
-  description: 'Hanabi Radar — dashboard',
+  title: 'Hanabi Intelligence',
+  description: 'Hanabi Intelligence — dashboard',
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
+    // suppressHydrationWarning: browser extensions (e.g. Scribe) inject attributes
+    // like `data-scribe-recorder-ready` onto <html> before React hydrates. This scopes
+    // the suppression to <html>'s own attributes — real mismatches below still warn.
     <html
       lang="fr"
       className={`${figtree.variable} ${jetbrainsMono.variable} antialiased`}
+      suppressHydrationWarning
     >
       <body>{children}</body>
     </html>

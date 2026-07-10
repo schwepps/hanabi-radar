@@ -12,7 +12,7 @@ import type { ListItem } from './types';
  * reference screen; production would push them server-side for scale.
  *
  * Takes an injected, RLS-enforced client (the caller's authenticated cookie
- * client — FSC-93) so the partner `items` policy decides visibility: a partner
+ * client) so the partner `items` policy decides visibility: a partner
  * gets the feed, a non-partner gets an empty result.
  */
 export async function fetchListItems(
@@ -24,7 +24,7 @@ export async function fetchListItems(
     .in('stream', ['signal', 'opportunity', 'trend'])
     .neq('status', 'dismissed')
     // Hide orphaned items: a post whose only sensors have opted out or been erased
-    // self-heals to seen_count=0 (FSC-95) — no participating source vouches for it.
+    // self-heals to seen_count=0 — no participating source vouches for it.
     // deriveListItem mirrors this so a live opt-out drops the card from the feed too.
     .gt('seen_count', 0)
     .order('posted_at', { ascending: false, nullsFirst: false })

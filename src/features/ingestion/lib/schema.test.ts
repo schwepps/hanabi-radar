@@ -89,7 +89,7 @@ describe('postSchema', () => {
   it.each([
     ['reaction_count', -1],
     ['reaction_count', 1.5],
-    ['reaction_count', 2_147_483_648], // > int4 max: must 422, not overflow the DB (FSC-119)
+    ['reaction_count', 2_147_483_648], // > int4 max: must 422, not overflow the DB
     ['comment_count', -5],
     ['comment_count', 2_147_483_648],
   ])('rejects an invalid %s value %s', (field, value) => {

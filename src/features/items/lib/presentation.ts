@@ -143,7 +143,7 @@ export function hopLabel(degree: Degree): string {
 }
 
 /**
- * Label for one revealed warm-intro path (FSC-106). A degree path reuses `hopLabel`; a
+ * Label for one revealed warm-intro path. A degree path reuses `hopLabel`; a
  * `none` row is a social-proof alternative (the sensor isn't connected, but a named
  * 1st-degree contact can bridge).
  */

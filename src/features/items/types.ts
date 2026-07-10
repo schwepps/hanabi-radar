@@ -53,7 +53,7 @@ export interface ListItem {
 /**
  * SENSITIVE — one revealed warm-intro path for an item. Deliberately a separate type,
  * resolved on demand when the modal opens via the permission-checked
- * `reveal_item_sources` RPC over `item_sources` joined to `sensors` (FSC-106). Never a
+ * `reveal_item_sources` RPC over `item_sources` joined to `sensors`. Never a
  * field of `ListItem`, never in the list/realtime payload.
  *
  * `degree` is the member's own connection to the author; `degree: 'none'` marks a
