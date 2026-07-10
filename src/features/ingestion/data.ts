@@ -81,6 +81,71 @@ export async function recordConsent(
   return data;
 }
 
+/**
+ * Resolve a sensor's id from its token hash for the GDPR lifecycle endpoints (opt-out,
+ * erasure). Unlike `resolveSensor`, this applies NO active/consent gate: an already
+ * opted-out (inactive) or never-consented sensor must still be able to opt out or erase
+ * itself. Returns the id for a known token, else `null` for an unknown token or a lookup
+ * error, so the caller answers with a uniform 401 like the other sensor routes.
+ */
+export async function resolveSensorId(
+  supabase: SupabaseClient<Database>,
+  tokenHash: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('sensors')
+    .select('id')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+
+  if (error != null) {
+    console.error('[ingestion] resolveSensorId failed:', error.message);
+    return null;
+  }
+  return data?.id ?? null;
+}
+
+/**
+ * Self-serve opt-out: set the sensor inactive via the RPC, which also re-derives the card
+ * aggregate for the sensor's items. Idempotent. Returns `true` when the sensor exists,
+ * `false` for an unknown id, or `null` on an unexpected RPC failure.
+ */
+export async function deactivateSensor(
+  supabase: SupabaseClient<Database>,
+  sensorId: string,
+): Promise<boolean | null> {
+  const { data, error } = await supabase.rpc('deactivate_sensor', {
+    p_sensor_id: sensorId,
+  });
+  if (error != null) {
+    console.error('[ingestion] deactivateSensor failed:', error.message);
+    return null;
+  }
+  // Validate rather than blind-cast (house rule, see recordConsent/persistBatch): a
+  // non-boolean would be a contract drift -> a clean 500 beats a surprising 200.
+  return typeof data === 'boolean' ? data : null;
+}
+
+/**
+ * Right to erasure: delete the sensor row via the RPC (item_sources links cascade away and
+ * the aggregate self-heals). Returns `true` when a row was deleted, `false` for an unknown
+ * id, or `null` on an unexpected RPC failure.
+ */
+export async function eraseSensor(
+  supabase: SupabaseClient<Database>,
+  sensorId: string,
+): Promise<boolean | null> {
+  const { data, error } = await supabase.rpc('erase_sensor', {
+    p_sensor_id: sensorId,
+  });
+  if (error != null) {
+    console.error('[ingestion] eraseSensor failed:', error.message);
+    return null;
+  }
+  // Validate rather than blind-cast (house rule, see recordConsent/persistBatch).
+  return typeof data === 'boolean' ? data : null;
+}
+
 /** Runtime shape check for the RPC result. The DB hands back `Json`, so validate the
  * fields we depend on rather than trusting a blind cast — a clean 500 beats a
  * `result.failed.length` throw if the function's return ever drifts. */

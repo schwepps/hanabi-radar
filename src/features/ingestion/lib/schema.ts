@@ -22,6 +22,11 @@ const MAX_TEXT = 40_000;
 const MAX_RAW = 64;
 const MAX_HASHTAG = 140;
 const MAX_HASHTAGS = 64;
+// Postgres int4 upper bound. Zod must stay a SUPERSET of the DB column types: the count
+// columns are int4, so an unbounded Zod number lets a value > 2^31-1 pass validation and
+// then throw 22003 in the ingest_posts cast — silently isolating the post into failed[]
+// instead of a clean 422 (FSC-119). Cap here so the boundary rejects it deterministically.
+const INT4_MAX = 2_147_483_647;
 
 /** Trim strings and treat blank as absent (null); pass non-strings through so the
  * inner schema reports a proper type error rather than this coercing it. */
@@ -81,8 +86,8 @@ export const postSchema = z
     original_author_profile_url: optionalHttpUrl,
     media_title: optionalText(MAX_NAME),
     hashtags,
-    reaction_count: z.number().int().nonnegative().default(0),
-    comment_count: z.number().int().nonnegative().default(0),
+    reaction_count: z.number().int().nonnegative().max(INT4_MAX).default(0),
+    comment_count: z.number().int().nonnegative().max(INT4_MAX).default(0),
     posted_at_raw: optionalText(MAX_RAW),
     // Accept both `Z` and offset forms (e.g. "…+02:00") — the extension's locale may
     // produce either; derivePostedAt handles both.

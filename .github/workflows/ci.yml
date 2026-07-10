@@ -54,7 +54,7 @@ jobs:
         run: pnpm test
 
   database:
-    name: Migrations, pgTAP & type sync
+    name: Migrations, pgTAP, type sync & ingest e2e
     runs-on: ubuntu-latest # GitHub-hosted runners ship Docker, needed by the Supabase CLI
     steps:
       - name: Checkout
@@ -95,3 +95,35 @@ jobs:
             echo "::error::src/types/database.ts is out of sync with the migrations. Run 'pnpm db:types' and commit the result."
             exit 1
           fi
+
+      # FSC-122: run the cross-repo /api/ingest contract matrix against a live dev server
+      # backed by the Supabase stack booted above. Catches HTTP/DB contract drift (e.g. the
+      # issues[].path string-vs-array mismatch) that stubbed unit tests + pgTAP miss.
+      - name: Export local Supabase keys for the dev server
+        run: |
+          pnpm supabase status -o env | sed -nE \
+            -e 's/^API_URL="?([^"]*)"?$/NEXT_PUBLIC_SUPABASE_URL=\1/p' \
+            -e 's/^ANON_KEY="?([^"]*)"?$/NEXT_PUBLIC_SUPABASE_ANON_KEY=\1/p' \
+            -e 's/^SERVICE_ROLE_KEY="?([^"]*)"?$/SUPABASE_SERVICE_ROLE_KEY=\1/p' \
+            >> "$GITHUB_ENV"
+
+      - name: Ingest contract matrix (e2e)
+        run: |
+          pnpm dev > /tmp/dev.log 2>&1 &
+          DEV_PID=$!
+          # Wait until the dev server answers (405 on GET /api/ingest means it is up).
+          for _ in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/ingest || true)
+            if [ "${code:-000}" != "000" ]; then break; fi
+            sleep 2
+          done
+          set +e
+          pnpm e2e:ingest
+          rc=$?
+          set -e
+          kill "$DEV_PID" 2>/dev/null || true
+          if [ "$rc" -ne 0 ]; then
+            echo "----- dev server log (tail) -----"
+            tail -n 50 /tmp/dev.log
+          fi
+          exit "$rc"
