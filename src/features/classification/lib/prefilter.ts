@@ -111,6 +111,29 @@ const DOMAIN_KEYWORDS = [
   'lancement',
   'lance ',
   'lançons',
+  // --- High-demand tech clusters (web3 / AI / software staffing) ---
+  // Precise substrings only: e.g. 'defi' (→ "definitely") and 'tech lead' (→ "fintech leader")
+  // are deliberately omitted — they over-match common words, and web3/AI posts already hit the
+  // keywords below.
+  'web3',
+  'blockchain',
+  'solidity',
+  'smart contract',
+  'ethereum',
+  'crypto',
+  'machine learning',
+  'machine-learning',
+  'mlops',
+  'deep learning',
+  'data science',
+  'data scientist',
+  'nlp',
+  'computer vision',
+  'software engineer',
+  'ingénieur logiciel',
+  'développeur',
+  'developer',
+  'staff engineer',
 ];
 
 /**

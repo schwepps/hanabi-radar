@@ -134,6 +134,19 @@ export const DOMAINS = [
       'Executive IT advisory — CIO/CTO strategy, IT governance and sourcing',
     label: 'Conseil CIO/CTO',
   },
+  // --- High-demand tech clusters (web3 / AI staffing signals) ---
+  {
+    slug: 'web3_blockchain',
+    gloss:
+      'Web3, blockchain, smart contracts (Solidity), DeFi, crypto, tokenization, on-chain',
+    label: 'Web3 & Blockchain',
+  },
+  {
+    slug: 'ai_ml',
+    gloss:
+      'Machine learning, data science, MLOps, model engineering (distinct from generative AI)',
+    label: 'IA & Machine Learning',
+  },
 ] as const;
 
 /** A canonical domain slug (literal union derived from `DOMAINS`). */

@@ -33,6 +33,15 @@ describe('classificationSchema', () => {
     ).toBe(true);
   });
 
+  it('accepts the new web3 / AI domain slugs', () => {
+    expect(
+      classificationSchema.safeParse({
+        ...valid,
+        domains: ['web3_blockchain', 'ai_ml'],
+      }).success,
+    ).toBe(true);
+  });
+
   it('rejects an unknown domain slug', () => {
     expect(
       classificationSchema.safeParse({ ...valid, domains: ['blockchain'] })

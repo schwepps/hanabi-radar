@@ -41,6 +41,8 @@ describe('taxonomy', () => {
       'vendor_management',
       'service_delivery',
       'cio_advisory',
+      'web3_blockchain',
+      'ai_ml',
     ]) {
       expect(isKnownDomain(slug)).toBe(true);
     }
