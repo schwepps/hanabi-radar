@@ -50,7 +50,9 @@ export function formatDateLabel(ageDays: number): string {
 
 function deriveAuthorMeta(row: ItemRow, kind: AuthorKind): string | null {
   if (kind === 'aggregate') {
-    return `${row.seen_count} publications`;
+    // French pluralization: singular for 1 (and 0), plural from 2 up (FSC-120).
+    const n = row.seen_count;
+    return `${n} publication${n > 1 ? 's' : ''}`;
   }
   // On a repost, author_title/author_company describe the RESHARER, not the
   // surfaced original author, and items has no original_author_title/company —

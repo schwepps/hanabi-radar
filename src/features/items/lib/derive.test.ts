@@ -102,6 +102,17 @@ describe('deriveListItem', () => {
     expect(item?.authorMeta).toBe('14 publications');
   });
 
+  it('pluralizes the aggregate publication count (FSC-120)', () => {
+    expect(
+      deriveListItem(makeItemRow({ stream: 'trend', seen_count: 1 }), NOW)
+        ?.authorMeta,
+    ).toBe('1 publication');
+    expect(
+      deriveListItem(makeItemRow({ stream: 'trend', seen_count: 2 }), NOW)
+        ?.authorMeta,
+    ).toBe('2 publications');
+  });
+
   it('returns null for unclassified, noise, dismissed, and orphaned rows', () => {
     expect(deriveListItem(makeItemRow({ stream: null }), NOW)).toBeNull();
     expect(deriveListItem(makeItemRow({ stream: 'noise' }), NOW)).toBeNull();
