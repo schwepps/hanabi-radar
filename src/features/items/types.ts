@@ -74,8 +74,10 @@ export interface RevealPath {
 
 /**
  * SENSITIVE — the permissioned reveal result. `paths` is ordered strongest-first by the
- * server; an EMPTY `paths` is a valid "no warm path" (not an error). `{ ok: false }`
- * covers an invalid id, an RPC failure, or — indistinguishably — a non-partner caller.
+ * server; an EMPTY `paths` is a valid "no warm path" — and is exactly what a non-partner
+ * caller receives (the RPC gate returns an empty set, indistinguishable from "no path"),
+ * so it is `{ ok: true, paths: [] }`, never a failure. `{ ok: false }` is only an invalid
+ * id or an RPC error.
  */
 export type RevealResponse =
   { ok: true; paths: RevealPath[] } | { ok: false; error: string };
