@@ -176,8 +176,17 @@ req POST "$INGEST" -H 'Content-Type: application/json; charset=utf-8' -H "Author
 assert_status 200 "B4 application/json; charset=utf-8 accepted"
 
 # ============================================================ C. 413 payload too large
-BIG="$(head -c 600000 /dev/zero | tr '\0' x)"
-ingest "$TOK_A" "$(batch "$(post "$NS-big" | jq -c --arg t "$BIG" '. + {text:$t}')")"
+# Build a ~600 KB body in a FILE and send it with --data-binary @file. Passing it as a
+# curl argument breaks on Linux (a single arg is capped at MAX_ARG_STRLEN, 128 KB), which
+# truncates the body to invalid JSON (400) instead of exercising the size cap (413).
+BIGFILE="$(mktemp)"
+{
+  printf '{"version":1,"posts":[{"linkedin_post_id":"%s-big","url":"https://x/big","author_name":"J","captured_at":"%s","text":"' "$NS" "$CAP"
+  head -c 600000 /dev/zero | tr '\0' x
+  printf '"}]}'
+} >"$BIGFILE"
+req POST "$INGEST" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOK_A" --data-binary @"$BIGFILE"
+rm -f "$BIGFILE"
 assert_status 413 "C1 body over 512 KB"
 assert_json '.error.code' payload_too_large "C1 code"
 
