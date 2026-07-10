@@ -13,7 +13,8 @@ import type { Database } from '@/types/database';
  * The key never reaches the browser: `import 'server-only'` fails the build if
  * this module is pulled into a Client Component, and `env.supabaseServiceRoleKey`
  * throws if it is ever read with `window` defined. Never read `item_sources` here
- * outside the dedicated warm-intro reveal flow (RLS-forced, FSC-106).
+ * on behalf of a partner: the warm-intro reveal (FSC-106) goes through the
+ * `reveal_item_sources` RPC on the auth client — never this service_role client.
  */
 export function createServerSupabaseClient(): SupabaseClient<Database> {
   return createClient<Database>(env.supabaseUrl, env.supabaseServiceRoleKey, {

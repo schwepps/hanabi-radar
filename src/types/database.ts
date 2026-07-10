@@ -250,6 +250,15 @@ export type Database = {
         Returns: undefined
       }
       record_sensor_consent: { Args: { p_sensor_id: string }; Returns: string }
+      reveal_item_sources: {
+        Args: { p_item_id: string }
+        Returns: {
+          author_degree: Database["public"]["Enums"]["author_degree"]
+          seen_at: string
+          sensor_name: string
+          social_proof: string
+        }[]
+      }
     }
     Enums: {
       author_degree: "first" | "second" | "third" | "none"

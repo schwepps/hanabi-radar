@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { hopLabel, initials, warmPathLabel } from './presentation';
+import {
+  formatSeenAt,
+  hopLabel,
+  initials,
+  revealPathLabel,
+  warmPathLabel,
+} from './presentation';
 
 describe('initials', () => {
   it('takes up to two uppercased initials', () => {
@@ -28,5 +34,24 @@ describe('hopLabel', () => {
     expect(hopLabel('second')).toContain('2e degré');
     expect(hopLabel('third')).toContain('3e degré');
     expect(hopLabel('none')).toBe('Aucun chemin');
+  });
+});
+
+describe('revealPathLabel', () => {
+  it('reuses hopLabel for a degree path', () => {
+    expect(revealPathLabel('first')).toBe(hopLabel('first'));
+    expect(revealPathLabel('second')).toBe(hopLabel('second'));
+  });
+
+  it('labels a none row as the social-proof alternative', () => {
+    expect(revealPathLabel('none')).toBe(
+      'Relation de 1er degré · voie alternative',
+    );
+  });
+});
+
+describe('formatSeenAt', () => {
+  it('formats an ISO timestamp as a French calendar date', () => {
+    expect(formatSeenAt('2026-07-08T10:00:00.000Z')).toBe('vu le 8 juil.');
   });
 });

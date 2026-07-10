@@ -101,9 +101,11 @@ Security** (shipped as the `..._partner_rls.sql` migration — never set by hand
 an SSR email+password login. An authenticated user is a **partner** iff a row exists
 for them in `partners` (`active = true`); a partner reads the shared `items` feed, a
 non-partner sees nothing, and an unauthenticated visitor is redirected to `/login`.
-`item_sources` (who saw what) stays hidden from everyone but `service_role` — the
-warm-intro reveal is a later ticket (FSC-106). Sensors authenticate ingestion with a
-hashed token (`sensors.token_hash`), not Supabase Auth (FSC-98).
+`item_sources` (who saw what) stays hidden at the table level (RLS-forced,
+`service_role`-only); a partner reads it only on demand through the `reveal_item_sources`
+RPC — the permissioned warm-intro reveal (FSC-106), gated by `is_partner()` and limited
+to active, consented sensors. Sensors authenticate ingestion with a hashed token
+(`sensors.token_hash`), not Supabase Auth (FSC-98).
 
 ### Auth settings per environment
 

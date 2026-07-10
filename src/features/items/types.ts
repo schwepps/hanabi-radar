@@ -51,17 +51,31 @@ export interface ListItem {
 }
 
 /**
- * SENSITIVE — the permissioned reveal payload. Deliberately a separate type,
- * resolved on demand when the modal opens (in production, a permission-checked
- * lookup against `item_sources`; FSC-106). Never a field of `ListItem`.
+ * SENSITIVE — one revealed warm-intro path for an item. Deliberately a separate type,
+ * resolved on demand when the modal opens via the permission-checked
+ * `reveal_item_sources` RPC over `item_sources` joined to `sensors` (FSC-106). Never a
+ * field of `ListItem`, never in the list/realtime payload.
+ *
+ * `degree` is the member's own connection to the author; `degree: 'none'` marks a
+ * social-proof ALTERNATIVE (the member isn't connected, but `socialProof` names a
+ * contact who can bridge). `socialProof` is a warm-intro note the server surfaces only
+ * when no member is 1st-degree — otherwise it is null on the payload.
  */
 export interface RevealPath {
-  itemId: string;
+  /** The collective member (sensor) who holds the path — `sensors.name`. */
   holderName: string;
-  holderTitle: string;
   holderInitials: string;
   degree: Degree;
-  /** e.g. "Directement connecté (1er degré)" / "N relations en commun". */
-  hopLabel: string;
-  authorName: string;
+  /** `item_sources.social_proof`: warm-intro note / alternative-contact text, or null. */
+  socialProof: string | null;
+  /** ISO timestamp the member saw the post (`item_sources.seen_at`). */
+  seenAt: string;
 }
+
+/**
+ * SENSITIVE — the permissioned reveal result. `paths` is ordered strongest-first by the
+ * server; an EMPTY `paths` is a valid "no warm path" (not an error). `{ ok: false }`
+ * covers an invalid id, an RPC failure, or — indistinguishably — a non-partner caller.
+ */
+export type RevealResponse =
+  { ok: true; paths: RevealPath[] } | { ok: false; error: string };

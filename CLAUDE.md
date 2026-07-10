@@ -11,7 +11,7 @@ This repo = **the app**: Next.js dashboard + Supabase backend (database, auth, i
 ## Stack (2026)
 
 - **Next.js 16** — App Router, strict TypeScript, Turbopack, **React 19**. Server Components by default.
-- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU). A server-only client (`src/lib/supabase/server.ts`, service_role) reads the shared, non-sensitive `items` feed in Server Components (the schema's intended "server-side reads" accessor) and is the writer for the ingestion + classification jobs; partner auth + partner RLS are shipped (FSC-93), and `item_sources` is never read yet (FSC-106).
+- **Supabase** — Postgres, Auth, Row Level Security, Edge Functions, `pg_cron`, Realtime. **EU** region. Schema provisioned via migrations (FSC-89, local Docker + hosted EU). A server-only client (`src/lib/supabase/server.ts`, service_role) reads the shared, non-sensitive `items` feed in Server Components (the schema's intended "server-side reads" accessor) and is the writer for the ingestion + classification jobs; partner auth + partner RLS are shipped (FSC-93), and `item_sources` is read only through the partner-gated `reveal_item_sources` RPC — the warm-intro reveal (FSC-106) — never directly and never via the service_role client.
 - **Claude API (Anthropic)** (`@anthropic-ai/sdk`) — item classification via structured output; one call per new item in a cron-triggered worker (FSC-100).
 - **Tooling** — pnpm 10 on Node 22; ESLint 9 (flat config), Prettier, Vitest; husky + commitlint + lint-staged; EditorConfig.
 - **Deploy** — Vercel, EU region.
@@ -59,7 +59,7 @@ Supabase CLI is a dev dependency — use `pnpm supabase …` or the `pnpm db:*` 
 
 ## Guardrails
 
-- **Never bypass RLS.** The dashboard is partners-only; `item_sources` (who saw what) is **never** exposed by default — only via the warm-intro flow. Never use the `service_role` key on the client or to read data on behalf of a partner.
+- **Never bypass RLS.** The dashboard is partners-only; `item_sources` (who saw what) is **never** exposed by default — only via the warm-intro reveal, the `reveal_item_sources` RPC (SECURITY DEFINER, `is_partner()`-gated, active+consented sensors only, FSC-106). Never use the `service_role` key on the client or to read data on behalf of a partner.
 - **Secrets out of code**: Supabase and Claude keys via environment variables only. No committed secrets.
 - **GDPR**: minimization (store only what's relevant), honor sensor opt-out and purge (FSC-95). Third-party data (decision-makers) is personal data.
 - **Keep it simple (no over-engineering)**: no speculative abstraction layers, no external queue (prefer native `pg_cron`/Realtime), a single production environment.
