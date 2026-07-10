@@ -23,6 +23,10 @@ export async function fetchListItems(
     .select('*')
     .in('stream', ['signal', 'opportunity', 'trend'])
     .neq('status', 'dismissed')
+    // Hide orphaned items: a post whose only sensors have opted out or been erased
+    // self-heals to seen_count=0 (FSC-95) — no participating source vouches for it.
+    // deriveListItem mirrors this so a live opt-out drops the card from the feed too.
+    .gt('seen_count', 0)
     .order('posted_at', { ascending: false, nullsFirst: false })
     // Keep null-posted_at rows ordered by recency (captured_at), matching the
     // ageDays derivation which falls back to captured_at.

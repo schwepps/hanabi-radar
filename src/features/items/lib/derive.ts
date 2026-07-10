@@ -66,14 +66,15 @@ function deriveAuthorMeta(row: ItemRow, kind: AuthorKind): string | null {
 
 /**
  * Derive a card payload from a DB row, or `null` when the row is not shown in
- * the list — unclassified, `noise`, or `dismissed` (mirrors the fetch's
- * `.neq('status','dismissed')` in data.ts, so a realtime dismissal drops the row
- * from the live feed too). Reposts surface the ORIGINAL author (the
- * decision-maker), never the resharer.
+ * the list — unclassified, `noise`, `dismissed`, or orphaned (`seen_count = 0`:
+ * every sensor that saw it has opted out or been erased, FSC-95). Mirrors the
+ * fetch's `.neq('status','dismissed')` and `.gt('seen_count', 0)` in data.ts, so
+ * a realtime dismissal or opt-out drops the row from the live feed too. Reposts
+ * surface the ORIGINAL author (the decision-maker), never the resharer.
  */
 export function deriveListItem(row: ItemRow, now?: Date): ListItem | null {
   const stream = toStream(row.stream);
-  if (stream === null || row.status === 'dismissed') {
+  if (stream === null || row.status === 'dismissed' || row.seen_count <= 0) {
     return null;
   }
 

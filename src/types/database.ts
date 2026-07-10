@@ -231,9 +231,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deactivate_sensor: { Args: { p_sensor_id: string }; Returns: boolean }
+      erase_sensor: { Args: { p_sensor_id: string }; Returns: boolean }
       ingest_posts: {
         Args: { p_posts: Json; p_sensor_id: string }
         Returns: Json
+      }
+      is_counted_sensor: {
+        Args: { p_active: boolean; p_consented_at: string }
+        Returns: boolean
       }
       is_partner: { Args: never; Returns: boolean }
       recompute_best_author_degree: {

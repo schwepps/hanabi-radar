@@ -63,6 +63,20 @@ describe('applyFeedChange', () => {
     expect(next.items).toEqual([]);
   });
 
+  it('removes a shown item when its last sensor opts out (seen_count → 0)', () => {
+    const feed: Feed = {
+      items: [makeListItem({ id: 'a' }), makeListItem({ id: 'b' })],
+      arrivals: ['a'],
+    };
+    const next = applyFeedChange(
+      feed,
+      makeItemRow({ id: 'a', stream: 'signal', seen_count: 0 }),
+      NOW,
+    );
+    expect(next.items.map((i) => i.id)).toEqual(['b']);
+    expect(next.arrivals).toEqual([]); // dropped from arrivals too
+  });
+
   it('is a no-op for a hidden row that was never shown', () => {
     const row = makeItemRow({ id: 'z', stream: null });
     const next = applyFeedChange(EMPTY, row, NOW);

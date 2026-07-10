@@ -102,7 +102,7 @@ describe('deriveListItem', () => {
     expect(item?.authorMeta).toBe('14 publications');
   });
 
-  it('returns null for unclassified, noise, and dismissed rows', () => {
+  it('returns null for unclassified, noise, dismissed, and orphaned rows', () => {
     expect(deriveListItem(makeItemRow({ stream: null }), NOW)).toBeNull();
     expect(deriveListItem(makeItemRow({ stream: 'noise' }), NOW)).toBeNull();
     // Dismissed rows drop out of the live feed too (mirrors data.ts .neq).
@@ -111,6 +111,11 @@ describe('deriveListItem', () => {
         makeItemRow({ stream: 'signal', status: 'dismissed' }),
         NOW,
       ),
+    ).toBeNull();
+    // Orphaned rows — every sensor that saw it opted out/erased, so seen_count=0
+    // (FSC-95) — drop out too (mirrors data.ts .gt('seen_count', 0)).
+    expect(
+      deriveListItem(makeItemRow({ stream: 'signal', seen_count: 0 }), NOW),
     ).toBeNull();
   });
 

@@ -73,6 +73,36 @@ passes.
 - **200**: `{ "consented_at": string }` — always a non-null ISO-8601 timestamp (the
   just-recorded or previously-recorded value).
 
+## Opt-out & erasure (GDPR — FSC-95)
+
+Two self-serve GDPR endpoints. Same `Authorization: Bearer <token>` scheme and the same
+uniform **401** on any auth failure. Unlike `/api/ingest`, they do **not** require the
+sensor to be `active` or consented — a sensor must always be able to withdraw, even after
+opting out. **No request body**; response is `application/json`; error envelope is the
+shared `{ "error": { "code", "message" } }` (`401 unauthorized` / `500 server_error`).
+
+**Procedure — no admin involved:** the sensor (the extension) authenticates with its own
+bearer token and calls the endpoint; the server acts on exactly that sensor.
+
+### POST /api/sensor/opt-out
+
+Set the sensor **inactive** (self-serve opt-out). **Idempotent** — opting out an
+already-inactive sensor still succeeds. After this call, `/api/ingest` refuses the sensor
+(uniform 401), and its past sightings stop counting toward the dashboard aggregates
+(`best_author_degree` / `seen_count`) and the warm-intro reveal. The sensor row and its
+history are **retained** (this is opt-out, not erasure).
+
+- **200**: `{ "active": false }`.
+
+### DELETE /api/sensor/me
+
+**Erase** the sensor (right to be forgotten). Deletes the sensor row and its
+`item_sources` links (which posts it saw, plus its connection degree / social-proof
+notes). The captured posts (`items`) are third-party content shared across sensors and are
+**retained**; any aggregate they carried self-heals. **Irreversible.**
+
+- **200**: `{ "erased": true }`.
+
 ## Request body
 
 An envelope, not a bare array:
@@ -172,13 +202,16 @@ mitigations).
 
 - Dedup key is `linkedin_post_id` (UNIQUE). Re-sending a known post upserts its
   `items` row and this sensor's `item_sources` row.
-- **`seen_count`** = the number of **distinct sensors** that reported the post. A
-  same-sensor resend does **not** increment it (idempotent). A new sensor does.
+- **`seen_count`** = the number of **distinct active + consented sensors** that reported
+  the post. A same-sensor resend does **not** increment it (idempotent). A new sensor
+  does. A sensor that later opts out or is erased drops back out of the count (FSC-95).
 - Re-capture updates: engagement counts are **greatest-wins** (never regress);
   `captured_at` and `posted_at` are kept from the **first** capture; classification
   and triage columns are never touched.
-- `best_author_degree` is a derived, non-identifying aggregate (strongest degree
-  across all sensors) maintained by the database.
+- `best_author_degree` is a derived, non-identifying aggregate (strongest degree across
+  the **active + consented** sensors that saw the post) maintained by the database — the
+  same population the warm-intro reveal exposes, so the card can never over-claim a path
+  the reveal hides.
 
 ## Versioning
 
@@ -218,4 +251,17 @@ curl -sS -X POST http://127.0.0.1:3000/api/ingest \
         "posted_at_raw":"2h","reaction_count":12,"author_degree":"second",
         "social_proof":"Camille connaît Jean"}]}'
 # -> {"received":1,"new_items":1,"known_items":0}
+
+# Opt out (self-serve; idempotent). Afterwards /api/ingest returns 401 for this token.
+curl -sS -X POST http://127.0.0.1:3000/api/sensor/opt-out \
+  -H 'Authorization: Bearer hanabi-local-dev-sensor-token'
+# -> {"active":false}
+
+# Erase the sensor (right to be forgotten; irreversible).
+curl -sS -X DELETE http://127.0.0.1:3000/api/sensor/me \
+  -H 'Authorization: Bearer hanabi-local-onboarding-token'
+# -> {"erased":true}
 ```
+
+> These two mutate (or delete) the local seeded sensor — re-run `pnpm db:reset` to restore
+> the seed state afterwards.

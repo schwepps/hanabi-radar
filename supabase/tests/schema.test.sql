@@ -43,9 +43,11 @@ select ok(
 -- ---------------------------------------------------------------------------
 -- Fixtures
 -- ---------------------------------------------------------------------------
-insert into sensors (id, name, email, token_hash) values
-  ('00000000-0000-0000-0000-000000000001', 's1', 's1@example.test', 'h1'),
-  ('00000000-0000-0000-0000-000000000002', 's2', 's2@example.test', 'h2');
+-- consented_at set: recompute_best_author_degree counts only active+consented sensors
+-- (FSC-95), so the derivation cases below use consented sensors.
+insert into sensors (id, name, email, token_hash, consented_at) values
+  ('00000000-0000-0000-0000-000000000001', 's1', 's1@example.test', 'h1', now()),
+  ('00000000-0000-0000-0000-000000000002', 's2', 's2@example.test', 'h2', now());
 
 insert into items (id, linkedin_post_id, author_name, url, captured_at) values
   ('11111111-1111-1111-1111-111111111111', 'urn:li:activity:A', 'Author A', 'https://x/a', now()),

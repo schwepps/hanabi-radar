@@ -9,9 +9,12 @@ select plan(33);
 -- Fixtures (as superuser). Sensors only — items/item_sources are created by the
 -- RPC. Ids chosen not to collide with seed.sql or the other test files.
 -- ---------------------------------------------------------------------------
-insert into sensors (id, name, email, token_hash) values
-  ('f1000000-0000-4000-8000-000000000001', 'ing-s1', 'ing-s1@t.test', 'inghash1'),
-  ('f1000000-0000-4000-8000-000000000002', 'ing-s2', 'ing-s2@t.test', 'inghash2');
+-- consented_at set: recompute_best_author_degree counts only active+consented sensors
+-- (FSC-95 consent-aware aggregate) — which is also the real ingest state, since the gate
+-- refuses an unconsented sensor.
+insert into sensors (id, name, email, token_hash, consented_at) values
+  ('f1000000-0000-4000-8000-000000000001', 'ing-s1', 'ing-s1@t.test', 'inghash1', now()),
+  ('f1000000-0000-4000-8000-000000000002', 'ing-s2', 'ing-s2@t.test', 'inghash2', now());
 
 -- Build one payload element (item + source) with the fields a test needs.
 create function pg_temp.mk(
