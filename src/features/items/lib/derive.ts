@@ -67,6 +67,17 @@ function deriveAuthorMeta(row: ItemRow, kind: AuthorKind): string | null {
 }
 
 /**
+ * The card's author kind. Trends are cross-account aggregations — no single decision-maker author.
+ * Reposts surface the original author, whose type isn't stored (items has no
+ * `original_author_type`), so treat them as a person (decision-makers are people).
+ */
+function deriveAuthorKind(row: ItemRow, stream: Stream): AuthorKind {
+  if (stream === 'trend') return 'aggregate';
+  if (row.is_repost) return 'person';
+  return row.author_type;
+}
+
+/**
  * Derive a card payload from a DB row, or `null` when the row is not shown in
  * the list — unclassified, `noise`, `dismissed`, or orphaned (`seen_count = 0`:
  * every sensor that saw it has opted out or been erased). Mirrors the
@@ -85,15 +96,7 @@ export function deriveListItem(row: ItemRow, now?: Date): ListItem | null {
       ? row.original_author_name
       : row.author_name;
 
-  // Trends are cross-account aggregations — no single decision-maker author.
-  // Reposts surface the original author, whose type isn't stored (items has no
-  // original_author_type), so treat them as a person (decision-makers are people).
-  const authorKind: AuthorKind =
-    stream === 'trend'
-      ? 'aggregate'
-      : row.is_repost
-        ? 'person'
-        : row.author_type;
+  const authorKind = deriveAuthorKind(row, stream);
   const ageDays = computeAgeDays(row, now);
 
   return {
